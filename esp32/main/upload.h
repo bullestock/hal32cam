@@ -2,6 +2,6 @@
 
 #include <stddef.h>
 
-void upload(const char* resource,
-            const unsigned char* data,
-            size_t size);
+#include "esp_camera.h"
+
+void upload(const camera_fb_t* fb);

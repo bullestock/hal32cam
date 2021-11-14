@@ -10,8 +10,6 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
-#include "esp_camera.h"
-
 // ESP32Cam (AiThinker) PIN Map
 #define CAM_PIN_PWDN 32
 #define CAM_PIN_RESET -1 //software reset will be performed
@@ -82,8 +80,6 @@ void camera_task(void*)
     if (init_camera() != ESP_OK)
         return;
 
-    int pic_number = 0;
-
     while (1)
     {
         vTaskDelay(1000 / portTICK_RATE_MS);
@@ -94,15 +90,9 @@ void camera_task(void*)
             ESP_LOGE(TAG, "No picture taken!");
             continue;
         }
-        ESP_LOGI(TAG, "Picture taken! Its size was: %zu bytes", pic->len);
+        ESP_LOGI(TAG, "Picture size: %zu", pic->len);
 
-        const char* ext = "cam";
-        if (pic->format == PIXFORMAT_JPEG)
-            ext = "jpg";
-        char resource[80];
-        sprintf(resource, "/hal9kcam/%d-%06d.%s", CONFIG_HAL32CAM_INSTANCE, pic_number, ext);
-        ++pic_number;
-        upload(resource, pic->buf, pic->len);
+        upload(pic);
             
         // Release buffer
         esp_camera_fb_return(pic);

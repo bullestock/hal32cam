@@ -126,23 +126,8 @@ void obtain_time()
     }
 }
 
-void upload(const char* resource,
-            const unsigned char* data,
-            size_t size)
+void upload(const camera_fb_t* fb)
 {
-    
-    esp_http_client_config_t config {
-        .host = "minio.hal9k.dk",
-        .path = resource,
-        .cert_pem = howsmyssl_com_root_cert_pem_start,
-        .event_handler = _http_event_handler,
-        .transport_type = HTTP_TRANSPORT_OVER_SSL,
-    };
-    esp_http_client_handle_t client = esp_http_client_init(&config);
-
-    esp_http_client_set_method(client, HTTP_METHOD_PUT);
-    esp_http_client_set_post_field(client, reinterpret_cast<const char*>(data), size);
-
     // Get current time
     time_t current = 0;
     time(&current);
@@ -157,13 +142,33 @@ void upload(const char* resource,
         gmtime_r(&current, &timeinfo);
     }
 
+    const char* ext = "cam";
+    if (fb->format == PIXFORMAT_JPEG)
+        ext = "jpg";
+    char ts[20];
+    strftime(ts, sizeof(ts), "%Y%m%d%T", &timeinfo);
+    char resource[40];
+    sprintf(resource, "/hal9kcam/%d-%s.%s", CONFIG_HAL32CAM_INSTANCE, ts, ext);
+    
+    esp_http_client_config_t config {
+        .host = "minio.hal9k.dk",
+        .path = resource,
+        .cert_pem = howsmyssl_com_root_cert_pem_start,
+        .event_handler = _http_event_handler,
+        .transport_type = HTTP_TRANSPORT_OVER_SSL,
+    };
+    esp_http_client_handle_t client = esp_http_client_init(&config);
+
+    esp_http_client_set_method(client, HTTP_METHOD_PUT);
+    esp_http_client_set_post_field(client, reinterpret_cast<const char*>(fb->buf), fb->len);
+
     char date[40];
     strftime(date, sizeof(date), "%a, %d %b %Y %T %z", gmtime(&current));
     esp_http_client_set_header(client, "Date", date);
     const char* content_type = "application/octet-stream";
     esp_http_client_set_header(client, "Content-Type", content_type);
     char signature[128];
-    sprintf(signature, "PUT\n\n%s\n%s\n%s", content_type, date, resource);
+    snprintf(signature, sizeof(signature), "PUT\n\n%s\n%s\n%s", content_type, date, resource);
     const char* secret = CONFIG_HAL32CAM_SECRET_KEY;
     const mbedtls_md_info_t* md_info = mbedtls_md_info_from_type(MBEDTLS_MD_SHA1);
     unsigned char hmac[20]; // SHA1 HMAC is always 20 bytes
