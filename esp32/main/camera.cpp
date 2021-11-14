@@ -55,7 +55,7 @@ static camera_config_t camera_config = {
     .ledc_timer = LEDC_TIMER_0,
     .ledc_channel = LEDC_CHANNEL_0,
 
-    .pixel_format = PIXFORMAT_RGB565, //YUV422,GRAYSCALE,RGB565,JPEG
+    .pixel_format = PIXFORMAT_JPEG,
     .frame_size = FRAMESIZE_UXGA, //FRAMESIZE_QVGA,    //QQVGA-UXGA Do not use sizes above QVGA when not JPEG
 
     .jpeg_quality = 12, //0-63 lower number means higher quality
@@ -86,22 +86,25 @@ void camera_task(void*)
 
     while (1)
     {
+        vTaskDelay(1000 / portTICK_RATE_MS);
         ESP_LOGI(TAG, "Taking picture...");
         auto pic = esp_camera_fb_get();
-        if (pic)
+        if (!pic)
         {
-            ESP_LOGI(TAG, "Picture taken! Its size was: %zu bytes", pic->len);
-            char resource[80];
-            sprintf(resource, "/hal9kcam/%06d", pic_number);
-            ++pic_number;
-            upload(resource, pic->buf, pic->len);
-        }
-        else
             ESP_LOGE(TAG, "No picture taken!");
+            continue;
+        }
+        ESP_LOGI(TAG, "Picture taken! Its size was: %zu bytes", pic->len);
+
+        const char* ext = "cam";
+        if (pic->format == PIXFORMAT_JPEG)
+            ext = "jpg";
+        char resource[80];
+        sprintf(resource, "/hal9kcam/%d-%06d.%s", CONFIG_HAL32CAM_INSTANCE, pic_number, ext);
+        ++pic_number;
+        upload(resource, pic->buf, pic->len);
             
         // Release buffer
         esp_camera_fb_return(pic);
-
-        vTaskDelay(1000 / portTICK_RATE_MS);
     }
 }
