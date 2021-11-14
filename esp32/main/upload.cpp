@@ -1,3 +1,6 @@
+#include "defs.h"
+#include "upload.h"
+
 #include <string.h>
 #include <stdlib.h>
 
@@ -14,8 +17,6 @@
 #include "mbedtls/md.h"
 
 #include "esp_http_client.h"
-
-static const char* TAG = "HAL32CAM";
 
 /* Root cert for howsmyssl.com, taken from howsmyssl_com_root_cert.pem
 
@@ -125,9 +126,11 @@ void obtain_time()
     }
 }
 
-static void upload()
+void upload(const char* resource,
+            const unsigned char* data,
+            size_t size)
 {
-    const char* resource = "/hal9kcam/test"; //!!
+    
     esp_http_client_config_t config {
         .host = "minio.hal9k.dk",
         .path = resource,
@@ -138,7 +141,7 @@ static void upload()
     esp_http_client_handle_t client = esp_http_client_init(&config);
 
     esp_http_client_set_method(client, HTTP_METHOD_PUT);
-    esp_http_client_set_post_field(client, "test", 4); //!!
+    esp_http_client_set_post_field(client, reinterpret_cast<const char*>(data), size);
 
     // Get current time
     time_t current = 0;
@@ -185,11 +188,4 @@ static void upload()
         ESP_LOGE(TAG, "Error perform http request %s", esp_err_to_name(err));
 
     esp_http_client_cleanup(client);
-}
-
-void http_test_task(void*)
-{
-    upload();
-
-    vTaskDelete(nullptr);
 }
