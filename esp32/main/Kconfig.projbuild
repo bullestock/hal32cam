@@ -1,0 +1,9 @@
+menu "Hal9k ESP32Cam configuration"
+
+     config HAL32CAM_ACCESS_KEY
+            string "S3 access key"
+            
+     config HAL32CAM_SECRET_KEY
+            string "S3 secret key"
+
+endmenu
