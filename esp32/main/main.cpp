@@ -12,6 +12,7 @@
 static const char* TAG = "HAL32CAM";
 
 extern void http_test_task(void*);
+extern void camera_task(void*);
 
 extern "C"
 void app_main()
@@ -31,4 +32,5 @@ void app_main()
     ESP_LOGI(TAG, "Connected to WiFi");
 
     xTaskCreate(&http_test_task, "http_test_task", 8192, nullptr, 5, nullptr);
+    xTaskCreate(&camera_task, "camera_task", 8192, nullptr, 5, nullptr);
 }
