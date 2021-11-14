@@ -146,7 +146,7 @@ void upload(const camera_fb_t* fb)
     if (fb->format == PIXFORMAT_JPEG)
         ext = "jpg";
     char ts[20];
-    strftime(ts, sizeof(ts), "%Y%m%d%T", &timeinfo);
+    strftime(ts, sizeof(ts), "%Y%m%d%H%M%S", &timeinfo);
     char resource[40];
     sprintf(resource, "/hal9kcam/%d-%s.%s", CONFIG_HAL32CAM_INSTANCE, ts, ext);
     
