@@ -18,10 +18,12 @@ if(IDF_TARGET STREQUAL "esp32" OR IDF_TARGET STREQUAL "esp32s2" OR IDF_TARGET ST
     conversions/to_bmp.c
     conversions/jpge.cpp
     conversions/esp_jpg_decode.c
+    jpegdec/JPEGDEC.cpp
     )
 
   set(COMPONENT_ADD_INCLUDEDIRS
     driver/include
+    jpegdec/include
     conversions/include
     )
 
