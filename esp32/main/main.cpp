@@ -30,5 +30,5 @@ void app_main()
     ESP_ERROR_CHECK(example_connect());
     ESP_LOGI(TAG, "Connected to WiFi. Instance #%d", CONFIG_HAL32CAM_INSTANCE);
 
-    xTaskCreate(&camera_task, "camera_task", 8192, nullptr, 5, nullptr);
+    xTaskCreate(&camera_task, "camera_task", 32768, nullptr, 5, nullptr);
 }
