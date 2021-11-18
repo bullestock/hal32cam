@@ -3,6 +3,9 @@
 
 #include "JPEGDEC.h"
 
+#include "esp_log.h"
+#include "esp_system.h"
+
 constexpr const int FACTOR = 8;
 constexpr const int BUFSIZE_X = FRAMESIZE_X/FACTOR;
 constexpr const int BUFSIZE_Y = FRAMESIZE_Y/FACTOR;
@@ -20,6 +23,7 @@ static uint8_t* draw_cb_buf = nullptr;
 
 int draw_cb(JPEGDRAW* draw)
 {
+    //printf("Draw: %d, %d\n", (int) draw->x, (int) draw->y);
     uint8_t* p = draw_cb_buf + draw->y * BUFSIZE_X / X_FACTOR;
     int i = 0;
     while (i < draw->iWidth)
@@ -45,7 +49,8 @@ void downsample(const camera_fb_t* fb,
 {
     draw_cb_buf = buf;
     JPEGDEC decoder;
-    decoder.openRAM(fb->buf, fb->len, draw_cb);
+    ESP_ERROR_CHECK(!decoder.openRAM(fb->buf, fb->len, draw_cb));
+    ESP_ERROR_CHECK(!decoder.decode(0, 0, JPEG_SCALE_EIGHTH));
 }
 
 bool motion_detect(const camera_fb_t* fb)
@@ -59,6 +64,7 @@ bool motion_detect(const camera_fb_t* fb)
     {
         // First time: Save reference image and return false
         first_time = false;
+        ESP_LOGI(TAG, "Saved reference image");
         return false;
     }
 
@@ -70,5 +76,6 @@ bool motion_detect(const camera_fb_t* fb)
             if (diff > PIXEL_THRESHOLD)
                 ++changes;
         }
+    printf("%d changes\n", changes);
     return (changes*100)/BUFFER_BYTESIZE > PERCENT_THRESHOLD;
 }
