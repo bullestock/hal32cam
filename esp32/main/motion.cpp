@@ -51,6 +51,16 @@ void downsample(const camera_fb_t* fb,
     JPEGDEC decoder;
     ESP_ERROR_CHECK(!decoder.openRAM(fb->buf, fb->len, draw_cb));
     ESP_ERROR_CHECK(!decoder.decode(0, 0, JPEG_SCALE_EIGHTH));
+#if 0
+    printf("-------------------\n");
+    printf("P2\n%d %d 255\n", BUFSIZE_X/X_FACTOR, BUFSIZE_Y);
+    for (int y = 0; y < BUFSIZE_Y; ++y)
+    {
+        for (int x = 0; x < BUFSIZE_X/X_FACTOR; ++x)
+            printf("%d ", buf[y*BUFSIZE_X/X_FACTOR + x]);
+        printf("\n");
+    }
+#endif
 }
 
 bool motion_detect(const camera_fb_t* fb)
