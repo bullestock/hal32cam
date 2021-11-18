@@ -79,7 +79,7 @@ bool motion_detect(const camera_fb_t* fb)
     }
 
     int changes = 0;
-    for (int x = 0; x < BUFSIZE_X; ++x)
+    for (int x = 0; x < BUFSIZE_X/X_FACTOR; ++x)
         for (int y = 0; y < BUFSIZE_Y; ++y)
         {
             const auto diff = abs(new_buf[y * BUFSIZE_X + x] - old_buf[y * BUFSIZE_X + x]);
