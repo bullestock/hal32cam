@@ -1,6 +1,5 @@
 #include "defs.h"
 #include "motion.h"
-#include "upload.h"
 
 #include <esp_log.h>
 #include <esp_system.h>
@@ -93,8 +92,7 @@ void camera_task(void*)
         }
         ESP_LOGI(TAG, "Picture size: %zu", pic->len);
 
-        if (motion_detect(pic))
-            upload(pic);
+        motion_detect(pic);
             
         // Release buffer
         esp_camera_fb_return(pic);

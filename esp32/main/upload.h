@@ -4,4 +4,5 @@
 
 #include "esp_camera.h"
 
-void upload(const camera_fb_t* fb);
+void upload(const camera_fb_t* fb,
+            const unsigned char* data, size_t size);

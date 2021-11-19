@@ -126,25 +126,12 @@ void obtain_time()
     }
 }
 
-void upload(const camera_fb_t* fb)
+void upload(const unsigned char* data, size_t size,
+            time_t current,
+            const char* ext)
 {
-    // Get current time
-    time_t current = 0;
-    time(&current);
     struct tm timeinfo;
     gmtime_r(&current, &timeinfo);
-    // Is time set? If not, tm_year will be (1970 - 1900).
-    if (timeinfo.tm_year < (2016 - 1900))
-    {
-        ESP_LOGI(TAG, "Getting time via NTP");
-        obtain_time();
-        time(&current);
-        gmtime_r(&current, &timeinfo);
-    }
-
-    const char* ext = "cam";
-    if (fb->format == PIXFORMAT_JPEG)
-        ext = "jpg";
     char ts[20];
     strftime(ts, sizeof(ts), "%Y%m%d%H%M%S", &timeinfo);
     char resource[40];
@@ -160,10 +147,11 @@ void upload(const camera_fb_t* fb)
     esp_http_client_handle_t client = esp_http_client_init(&config);
 
     esp_http_client_set_method(client, HTTP_METHOD_PUT);
-    esp_http_client_set_post_field(client, reinterpret_cast<const char*>(fb->buf), fb->len);
+
+    esp_http_client_set_post_field(client, reinterpret_cast<const char*>(data), size);
 
     char date[40];
-    strftime(date, sizeof(date), "%a, %d %b %Y %T %z", gmtime(&current));
+    strftime(date, sizeof(date), "%a, %d %b %Y %T %z", &timeinfo);
     esp_http_client_set_header(client, "Date", date);
     const char* content_type = "application/octet-stream";
     esp_http_client_set_header(client, "Content-Type", content_type);
@@ -185,12 +173,40 @@ void upload(const camera_fb_t* fb)
 
     if (err == ESP_OK)
     {
-        ESP_LOGI(TAG, "HTTPS Status = %d, content_length = %d",
-                 esp_http_client_get_status_code(client),
-                 esp_http_client_get_content_length(client));
+        ESP_LOGI(TAG, "Uploaded %s, HTTPS Status = %d",
+                 resource,
+                 esp_http_client_get_status_code(client));
     }
     else
-        ESP_LOGE(TAG, "Error perform http request %s", esp_err_to_name(err));
-
+        ESP_LOGE(TAG, "Error performing http request %s", esp_err_to_name(err));
+    
     esp_http_client_cleanup(client);
+}
+
+void upload(const camera_fb_t* fb,
+            const unsigned char* data, size_t size)
+{
+    // Get current time
+    time_t current = 0;
+    time(&current);
+    struct tm timeinfo;
+    gmtime_r(&current, &timeinfo);
+    // Is time set? If not, tm_year will be (1970 - 1900).
+    if (timeinfo.tm_year < (2016 - 1900))
+    {
+        ESP_LOGI(TAG, "Getting time via NTP");
+        obtain_time();
+        time(&current);
+    }
+
+    // Picture
+    
+    const char* ext = "cam";
+    if (fb->format == PIXFORMAT_JPEG)
+        ext = "jpg";
+    upload(fb->buf, fb->len, current, ext);
+#if 1
+    // Buffer
+    upload(data, size, current, "bin");
+#endif
 }

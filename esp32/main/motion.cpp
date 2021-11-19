@@ -1,5 +1,6 @@
 #include "defs.h"
 #include "motion.h"
+#include "upload.h"
 
 #include "JPEGDEC.h"
 
@@ -50,7 +51,7 @@ void downsample(const camera_fb_t* fb,
     draw_cb_buf = buf;
     JPEGDEC decoder;
     ESP_ERROR_CHECK(!decoder.openRAM(fb->buf, fb->len, draw_cb));
-    ESP_ERROR_CHECK(!decoder.decode(0, 0, JPEG_SCALE_EIGHTH));
+    /*ESP_ERROR_CHECK*/(!decoder.decode(0, 0, JPEG_SCALE_EIGHTH)); // can fail
 #if 0
     printf("-------------------\n");
     printf("P2\n%d %d 255\n", BUFSIZE_X/X_FACTOR, BUFSIZE_Y);
@@ -87,5 +88,9 @@ bool motion_detect(const camera_fb_t* fb)
                 ++changes;
         }
     printf("%d changes\n", changes);
-    return (changes*100)/BUFFER_BYTESIZE > PERCENT_THRESHOLD;
+    if ((changes*100)/BUFFER_BYTESIZE < PERCENT_THRESHOLD)
+        return false;
+
+    upload(fb, new_buf, sizeof(buf1));
+    return true;
 }
