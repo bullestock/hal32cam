@@ -52,16 +52,6 @@ void downsample(const camera_fb_t* fb,
     JPEGDEC decoder;
     ESP_ERROR_CHECK(!decoder.openRAM(fb->buf, fb->len, draw_cb));
     /*ESP_ERROR_CHECK*/(!decoder.decode(0, 0, JPEG_SCALE_EIGHTH)); // can fail
-#if 0
-    printf("-------------------\n");
-    printf("P2\n%d %d 255\n", BUFSIZE_X/X_FACTOR, BUFSIZE_Y);
-    for (int y = 0; y < BUFSIZE_Y; ++y)
-    {
-        for (int x = 0; x < BUFSIZE_X/X_FACTOR; ++x)
-            printf("%d ", buf[y*BUFSIZE_X/X_FACTOR + x]);
-        printf("\n");
-    }
-#endif
 }
 
 bool motion_detect(const camera_fb_t* fb)
@@ -80,13 +70,12 @@ bool motion_detect(const camera_fb_t* fb)
     }
 
     int changes = 0;
-    for (int x = 0; x < BUFSIZE_X/X_FACTOR; ++x)
-        for (int y = 0; y < BUFSIZE_Y; ++y)
-        {
-            const auto diff = abs(new_buf[y * BUFSIZE_X + x] - old_buf[y * BUFSIZE_X + x]);
-            if (diff > PIXEL_THRESHOLD)
-                ++changes;
-        }
+    for (int i = 0; i < sizeof(buf1); ++i)
+    {
+        const auto diff = abs(static_cast<int>(new_buf[i]) - static_cast<int>(old_buf[i]));
+        if (diff > PIXEL_THRESHOLD)
+            ++changes;
+    }
     printf("%d changes\n", changes);
     if ((changes*100)/BUFFER_BYTESIZE < PERCENT_THRESHOLD)
         return false;
