@@ -205,7 +205,7 @@ void upload(const camera_fb_t* fb,
     if (fb->format == PIXFORMAT_JPEG)
         ext = "jpg";
     upload(fb->buf, fb->len, current, ext);
-#if 1
+#if 0
     // Buffer
     upload(data, size, current, "bin");
 #endif
