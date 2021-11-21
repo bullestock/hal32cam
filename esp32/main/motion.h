@@ -5,4 +5,4 @@
 #include "esp_camera.h"
 
 /// Return true if changes are found
-bool motion_detect(const camera_fb_t* fb, const struct tm* current);
+bool motion_detect(const camera_fb_t* fb, time_t cur_time, const struct tm* cur_tm);
