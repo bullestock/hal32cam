@@ -54,7 +54,7 @@ void downsample(const camera_fb_t* fb,
     /*ESP_ERROR_CHECK*/(!decoder.decode(0, 0, JPEG_SCALE_EIGHTH)); // can fail
 }
 
-bool motion_detect(const camera_fb_t* fb)
+bool motion_detect(const camera_fb_t* fb, const struct tm* current)
 {
     const auto old_buf = current_buf ? buf1 : buf2;
     auto new_buf = current_buf ? buf2 : buf1;
@@ -80,6 +80,6 @@ bool motion_detect(const camera_fb_t* fb)
     if ((changes*100)/BUFFER_BYTESIZE < PERCENT_THRESHOLD)
         return false;
 
-    upload(fb, new_buf, sizeof(buf1));
+    upload(fb, current, new_buf, sizeof(buf1));
     return true;
 }

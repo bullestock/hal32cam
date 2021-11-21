@@ -83,7 +83,16 @@ void camera_task(void*)
     while (1)
     {
         vTaskDelay(1000 / portTICK_RATE_MS);
-        ESP_LOGI(TAG, "Taking picture...");
+
+        // Get current time
+        time_t current = 0;
+        time(&current);
+        struct tm timeinfo;
+        gmtime_r(&current, &timeinfo);
+
+        char ts[20];
+        strftime(ts, sizeof(ts), "%Y%m%d%H%M%S", &timeinfo);
+        printf("Taking picture: %s\n", ts);
         auto pic = esp_camera_fb_get();
         if (!pic)
         {
@@ -92,7 +101,7 @@ void camera_task(void*)
         }
         ESP_LOGI(TAG, "Picture size: %zu", pic->len);
 
-        motion_detect(pic);
+        motion_detect(pic, &timeinfo);
             
         // Release buffer
         esp_camera_fb_return(pic);

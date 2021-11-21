@@ -11,7 +11,6 @@
 #include "esp_event.h"
 #include "esp_netif.h"
 #include "esp_tls.h"
-#include "esp_sntp.h"
 
 #include "mbedtls/base64.h"
 #include "mbedtls/md.h"
@@ -101,41 +100,14 @@ esp_err_t _http_event_handler(esp_http_client_event_t* evt)
     return ESP_OK;
 }
 
-void initialize_sntp()
-{
-    ESP_LOGI(TAG, "Initializing SNTP");
-    sntp_setoperatingmode(SNTP_OPMODE_POLL);
-    sntp_setservername(0, "pool.ntp.org");
-#ifdef CONFIG_SNTP_TIME_SYNC_METHOD_SMOOTH
-    sntp_set_sync_mode(SNTP_SYNC_MODE_SMOOTH);
-#endif
-    sntp_init();
-}
-
-void obtain_time()
-{
-    initialize_sntp();
-
-    // wait for time to be set
-    int retry = 0;
-    const int retry_count = 10;
-    while (sntp_get_sync_status() == SNTP_SYNC_STATUS_RESET && ++retry < retry_count)
-    {
-        ESP_LOGI(TAG, "Waiting for system time to be set... (%d/%d)", retry, retry_count);
-        vTaskDelay(2000 / portTICK_PERIOD_MS);
-    }
-}
-
 void upload(const unsigned char* data, size_t size,
-            time_t current,
+            const struct tm* current,
             const char* ext)
 {
-    struct tm timeinfo;
-    gmtime_r(&current, &timeinfo);
     char ts[20];
-    strftime(ts, sizeof(ts), "%Y%m%d%H%M%S", &timeinfo);
+    strftime(ts, sizeof(ts), "%Y%m%d%H%M%S", current);
     char resource[40];
-    sprintf(resource, "/hal9kcam/%d-%s.%s", CONFIG_HAL32CAM_INSTANCE, ts, ext);
+    sprintf(resource, "/hal9kcam/%d-%s.%s", (int) config_instance_number, ts, ext);
     
     esp_http_client_config_t config {
         .host = "minio.hal9k.dk",
@@ -151,13 +123,13 @@ void upload(const unsigned char* data, size_t size,
     esp_http_client_set_post_field(client, reinterpret_cast<const char*>(data), size);
 
     char date[40];
-    strftime(date, sizeof(date), "%a, %d %b %Y %T %z", &timeinfo);
+    strftime(date, sizeof(date), "%a, %d %b %Y %T %z", current);
     esp_http_client_set_header(client, "Date", date);
     const char* content_type = "application/octet-stream";
     esp_http_client_set_header(client, "Content-Type", content_type);
     char signature[128];
     snprintf(signature, sizeof(signature), "PUT\n\n%s\n%s\n%s", content_type, date, resource);
-    const char* secret = CONFIG_HAL32CAM_SECRET_KEY;
+    const char* secret = config_s3_secret_key;
     const mbedtls_md_info_t* md_info = mbedtls_md_info_from_type(MBEDTLS_MD_SHA1);
     unsigned char hmac[20]; // SHA1 HMAC is always 20 bytes
     mbedtls_md_hmac(md_info, (unsigned char*) secret, strlen(secret),
@@ -167,7 +139,7 @@ void upload(const unsigned char* data, size_t size,
     size_t written = 0;
     mbedtls_base64_encode(b64hmac, sizeof(b64hmac), &written, hmac, sizeof(hmac));
     char auth[80];
-    sprintf(auth, "AWS %s:%s", CONFIG_HAL32CAM_ACCESS_KEY, b64hmac);
+    sprintf(auth, "AWS %s:%s", config_s3_access_key, b64hmac);
     esp_http_client_set_header(client, "Authorization", auth);
     esp_err_t err = esp_http_client_perform(client);
 
@@ -184,21 +156,9 @@ void upload(const unsigned char* data, size_t size,
 }
 
 void upload(const camera_fb_t* fb,
+            const struct tm* current,
             const unsigned char* data, size_t size)
 {
-    // Get current time
-    time_t current = 0;
-    time(&current);
-    struct tm timeinfo;
-    gmtime_r(&current, &timeinfo);
-    // Is time set? If not, tm_year will be (1970 - 1900).
-    if (timeinfo.tm_year < (2016 - 1900))
-    {
-        ESP_LOGI(TAG, "Getting time via NTP");
-        obtain_time();
-        time(&current);
-    }
-
     // Picture
     
     const char* ext = "cam";
