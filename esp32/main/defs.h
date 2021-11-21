@@ -8,6 +8,8 @@ constexpr const char* S3_ACCESS_KEY = "s3a";
 constexpr const char* S3_SECRET_KEY = "s3s";
 constexpr const char* INSTANCE_KEY = "inst";
 
+constexpr const int FLASH_ON_TIME_SECS = 60;
+
 extern char config_wifi_ssid[];
 extern char config_wifi_password[];
 extern char config_s3_access_key[];

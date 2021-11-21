@@ -80,6 +80,8 @@ void camera_task(void*)
     if (init_camera() != ESP_OK)
         return;
 
+    time_t last_motion = 0;
+    
     while (1)
     {
         vTaskDelay(1000 / portTICK_RATE_MS);
@@ -101,9 +103,14 @@ void camera_task(void*)
         }
         ESP_LOGI(TAG, "Picture size: %zu", pic->len);
 
-        motion_detect(pic, &timeinfo);
+        const bool motion = motion_detect(pic, &timeinfo);
             
         // Release buffer
         esp_camera_fb_return(pic);
+
+        if (motion)
+            last_motion = current;
+
+        ESP_ERROR_CHECK(gpio_set_level((gpio_num_t) 4, current - last_motion < FLASH_ON_TIME_SECS));
     }
 }
