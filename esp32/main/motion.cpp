@@ -57,9 +57,6 @@ void downsample(const camera_fb_t* fb,
     /*ESP_ERROR_CHECK*/(!decoder.decode(0, 0, JPEG_SCALE_EIGHTH)); // can fail
 }
 
-static time_t last_motion = 0;
-bool is_flash_on = false;
-
 bool motion_detect(const camera_fb_t* fb, time_t cur_time, const struct tm* cur_tm)
 {
     const auto old_buf = current_buf ? buf1 : buf2;
@@ -82,32 +79,10 @@ bool motion_detect(const camera_fb_t* fb, time_t cur_time, const struct tm* cur_
         if (diff > PIXEL_THRESHOLD)
             ++changes;
     }
-    if (is_flash_on)
-        printf("%d changes (%d sec)\n", changes, (int) (cur_time - last_motion));
-    else
-        printf("%d changes\n", changes);
+    printf("%d changes\n", changes);
     if ((changes*100)/BUFFER_BYTESIZE < PERCENT_THRESHOLD)
-    {
-        if (is_flash_on && (cur_time - last_motion > FLASH_ON_TIME_SECS))
-        {
-            printf("Flash off\n");
-            gpio_set_level((gpio_num_t) 4, false);
-            is_flash_on = false;
-            first_time = true;
-            vTaskDelay(1000 / portTICK_RATE_MS);
-        }
         return false;
-    }
 
-    last_motion = cur_time;
-
-    if (!is_flash_on)
-    {
-        printf("Flash on\n");
-        gpio_set_level((gpio_num_t) 4, true);
-        is_flash_on = true;
-        first_time = true;
-    }
     upload(fb, cur_tm, new_buf, sizeof(buf1));
 
     return true;

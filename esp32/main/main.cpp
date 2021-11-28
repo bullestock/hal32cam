@@ -6,6 +6,7 @@
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "esp32/rom/ets_sys.h"
 #include "esp_log.h"
 #include "esp_system.h"
 #include "nvs_flash.h"
@@ -97,6 +98,18 @@ char config_s3_access_key[40];
 char config_s3_secret_key[40];
 int8_t config_instance_number = 0;
 
+void flash_led(int n)
+{
+    for (int i = 0; i < n; ++i)
+    {
+        gpio_set_level((gpio_num_t) 4, true);
+        ets_delay_us(10);
+        gpio_set_level((gpio_num_t) 4, false);
+        if (i < n-1)
+            vTaskDelay(200 / portTICK_RATE_MS);
+    }
+}
+
 extern "C"
 void app_main()
 {
@@ -109,6 +122,8 @@ void app_main()
     io_conf.pull_up_en = GPIO_PULLUP_DISABLE;
     ESP_ERROR_CHECK(gpio_config(&io_conf));
 
+    flash_led(1);
+
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND)
     {
@@ -119,6 +134,7 @@ void app_main()
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
 
+    printf("HAL32CAM v %s\n", VERSION);
     printf("Press a key to enter console\n");
     bool debug = false;
     for (int i = 0; i < 20; ++i)
@@ -134,6 +150,8 @@ void app_main()
         run_console();        // never returns
     printf("\nStarting application\n");
 
+    flash_led(2);
+
     nvs_handle my_handle;
     ESP_ERROR_CHECK(nvs_open("storage", NVS_READWRITE, &my_handle));
     get_nvs_string(my_handle, WIFI_SSID_KEY, config_wifi_ssid, sizeof(config_wifi_ssid));
@@ -146,6 +164,8 @@ void app_main()
     // Connect to WiFi
     ESP_ERROR_CHECK(example_connect());
     ESP_LOGI(TAG, "Connected to WiFi. Instance #%d", (int) config_instance_number);
+
+    flash_led(3);
 
     // Get current time
     time_t current = 0;

@@ -93,7 +93,12 @@ void camera_task(void*)
         char ts[20];
         strftime(ts, sizeof(ts), "%Y%m%d%H%M%S", &timeinfo);
         printf("Taking picture: %s\n", ts);
+#if USE_FLASH
+        gpio_set_level((gpio_num_t) 4, true);
+        vTaskDelay(100 / portTICK_RATE_MS);
+#endif
         auto pic = esp_camera_fb_get();
+        gpio_set_level((gpio_num_t) 4, false);
         if (!pic)
         {
             ESP_LOGE(TAG, "No picture taken!");
