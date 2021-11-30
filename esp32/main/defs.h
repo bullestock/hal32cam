@@ -2,7 +2,7 @@
 
 #include "esp_camera.h"
 
-constexpr const char* VERSION = "0.1";
+constexpr const char* VERSION = "0.2";
 
 constexpr const char* WIFI_SSID_KEY = "ssid";
 constexpr const char* WIFI_PASSWORD_KEY = "pass";

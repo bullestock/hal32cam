@@ -7,12 +7,13 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp32/rom/ets_sys.h"
-#include "esp_log.h"
-#include "esp_system.h"
-#include "nvs_flash.h"
 #include "esp_event.h"
-#include "protocol_examples_common.h"
+#include "esp_log.h"
 #include "esp_sntp.h"
+#include "esp_system.h"
+#include "esp_wifi.h"
+#include "nvs_flash.h"
+#include "protocol_examples_common.h"
 
 extern void camera_task(void*);
 
@@ -164,6 +165,7 @@ void app_main()
     // Connect to WiFi
     ESP_ERROR_CHECK(example_connect());
     ESP_LOGI(TAG, "Connected to WiFi. Instance #%d", (int) config_instance_number);
+    ESP_ERROR_CHECK(esp_wifi_set_ps(WIFI_PS_NONE));
 
     flash_led(3);
 
