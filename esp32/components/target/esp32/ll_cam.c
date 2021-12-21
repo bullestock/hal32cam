@@ -15,6 +15,8 @@
 #include <stdio.h>
 #include <string.h>
 #include "soc/i2s_struct.h"
+#include "soc/periph_defs.h"
+#include "driver/periph_ctrl.h"
 #include "esp_idf_version.h"
 #if (ESP_IDF_VERSION_MAJOR >= 4) && (ESP_IDF_VERSION_MINOR > 1)
 #include "hal/gpio_ll.h"
