@@ -75,7 +75,7 @@ static esp_err_t init_camera()
     return ESP_OK;
 }
 
-void camera_task(void*)
+void camera_task(void* mode)
 {
     if (init_camera() != ESP_OK)
         return;
@@ -106,7 +106,7 @@ void camera_task(void*)
         }
         printf("Picture size: %zu\n", pic->len);
 
-        motion_detect(pic, current, &timeinfo);
+        motion_detect(mode != nullptr, pic, &timeinfo);
             
         // Release buffer
         esp_camera_fb_return(pic);

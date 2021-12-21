@@ -57,33 +57,35 @@ void downsample(const camera_fb_t* fb,
     /*ESP_ERROR_CHECK*/(!decoder.decode(0, 0, JPEG_SCALE_EIGHTH)); // can fail
 }
 
-bool motion_detect(const camera_fb_t* fb, time_t cur_time, const struct tm* cur_tm)
+bool motion_detect(bool force, const camera_fb_t* fb, const struct tm* cur_tm)
 {
-    const auto old_buf = current_buf ? buf1 : buf2;
-    auto new_buf = current_buf ? buf2 : buf1;
-    current_buf = !current_buf;
-
-    downsample(fb, new_buf);
-    if (first_time)
+    if (!force)
     {
-        // First time: Save reference image and return false
-        first_time = false;
-        ESP_LOGI(TAG, "Saved reference image");
-        return false;
-    }
+        const auto old_buf = current_buf ? buf1 : buf2;
+        auto new_buf = current_buf ? buf2 : buf1;
+        current_buf = !current_buf;
 
-    int changes = 0;
-    for (int i = 0; i < sizeof(buf1); ++i)
-    {
-        const auto diff = abs(static_cast<int>(new_buf[i]) - static_cast<int>(old_buf[i]));
-        if (diff > PIXEL_THRESHOLD)
-            ++changes;
-    }
-    printf("%d changes\n", changes);
-    if ((changes*100)/BUFFER_BYTESIZE < PERCENT_THRESHOLD)
-        return false;
+        downsample(fb, new_buf);
+        if (first_time)
+        {
+            // First time: Save reference image and return false
+            first_time = false;
+            ESP_LOGI(TAG, "Saved reference image");
+            return false;
+        }
 
-    upload(fb, cur_tm, new_buf, sizeof(buf1));
+        int changes = 0;
+        for (int i = 0; i < sizeof(buf1); ++i)
+        {
+            const auto diff = abs(static_cast<int>(new_buf[i]) - static_cast<int>(old_buf[i]));
+            if (diff > PIXEL_THRESHOLD)
+                ++changes;
+        }
+        printf("%d changes\n", changes);
+        if ((changes*100)/BUFFER_BYTESIZE < PERCENT_THRESHOLD)
+            return false;
+    }
+    upload(fb, cur_tm);
 
     return true;
 }
