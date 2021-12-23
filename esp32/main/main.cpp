@@ -1,8 +1,11 @@
+#include "connect.h"
 #include "console.h"
 #include "defs.h"
 
 #include <string.h>
 #include <stdlib.h>
+#include <string>
+#include <vector>
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -13,7 +16,6 @@
 #include "esp_system.h"
 #include "esp_wifi.h"
 #include "nvs_flash.h"
-#include "protocol_examples_common.h"
 
 extern void camera_task(void*);
 
@@ -93,8 +95,6 @@ void get_nvs_i8(nvs_handle my_handle, const char* key, int8_t& value)
     esp_restart();
 }
 
-char config_wifi_ssid[80];
-char config_wifi_password[80];
 char config_s3_access_key[40];
 char config_s3_secret_key[40];
 int8_t config_instance_number = 0;
@@ -109,6 +109,26 @@ void flash_led(int n)
         if (i < n-1)
             vTaskDelay(200 / portTICK_RATE_MS);
     }
+}
+
+std::vector<std::pair<std::string, std::string>> get_wifi_credentials(char* buf)
+{
+    std::vector<std::pair<std::string, std::string>> v;
+    bool is_ssid = true;
+    std::string ssid;
+    char* p = buf;
+    while (1)
+    {
+        char* token = strsep(&p, ":");
+        if (!token)
+            break;
+        if (is_ssid)
+            ssid = std::string(token);
+        else
+            v.push_back(std::make_pair(ssid, std::string(token)));
+        is_ssid = !is_ssid;
+    }
+    return v;
 }
 
 extern "C"
@@ -165,15 +185,16 @@ void app_main()
 
     nvs_handle my_handle;
     ESP_ERROR_CHECK(nvs_open("storage", NVS_READWRITE, &my_handle));
-    get_nvs_string(my_handle, WIFI_SSID_KEY, config_wifi_ssid, sizeof(config_wifi_ssid));
-    get_nvs_string(my_handle, WIFI_PASSWORD_KEY, config_wifi_password, sizeof(config_wifi_password));
+    char buf[256];
+    get_nvs_string(my_handle, WIFI_KEY, buf, sizeof(buf));
+    const auto creds = get_wifi_credentials(buf);
     get_nvs_string(my_handle, S3_ACCESS_KEY, config_s3_access_key, sizeof(config_s3_access_key));
     get_nvs_string(my_handle, S3_SECRET_KEY, config_s3_secret_key, sizeof(config_s3_secret_key));
     get_nvs_i8(my_handle, INSTANCE_KEY, config_instance_number);
     nvs_close(my_handle);
 
     // Connect to WiFi
-    ESP_ERROR_CHECK(example_connect());
+    ESP_ERROR_CHECK(connect(creds));
     ESP_LOGI(TAG, "Connected to WiFi. Instance #%d", (int) config_instance_number);
     ESP_ERROR_CHECK(esp_wifi_set_ps(WIFI_PS_NONE));
 

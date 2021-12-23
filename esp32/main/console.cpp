@@ -1,6 +1,8 @@
 #include "console.h"
 #include "defs.h"
 
+#include <string>
+
 #include "esp_system.h"
 #include "esp_log.h"
 #include "esp_console.h"
@@ -18,18 +20,18 @@ struct
     struct arg_str* ssid;
     struct arg_str* password;
     struct arg_end* end;
-}  set_wifi_credentials_args;
+}  add_wifi_credentials_args;
 
-int set_wifi_credentials(int argc, char** argv)
+int add_wifi_credentials(int argc, char** argv)
 {
-    int nerrors = arg_parse(argc, argv, (void**) &set_wifi_credentials_args);
+    int nerrors = arg_parse(argc, argv, (void**) &add_wifi_credentials_args);
     if (nerrors != 0)
     {
-        arg_print_errors(stderr, set_wifi_credentials_args.end, argv[0]);
+        arg_print_errors(stderr, add_wifi_credentials_args.end, argv[0]);
         return 1;
     }
-    const auto ssid = set_wifi_credentials_args.ssid->sval[0];
-    const auto password = set_wifi_credentials_args.password->sval[0];
+    const auto ssid = add_wifi_credentials_args.ssid->sval[0];
+    const auto password = add_wifi_credentials_args.password->sval[0];
     if (strlen(ssid) < 1)
     {
         printf("ERROR: Invalid SSID value\n");
@@ -37,10 +39,29 @@ int set_wifi_credentials(int argc, char** argv)
     }
     nvs_handle my_handle;
     ESP_ERROR_CHECK(nvs_open("storage", NVS_READWRITE, &my_handle));
-    ESP_ERROR_CHECK(nvs_set_str(my_handle, WIFI_SSID_KEY, ssid));
-    ESP_ERROR_CHECK(nvs_set_str(my_handle, WIFI_PASSWORD_KEY, password));
+    std::string creds;
+    char buf[256];
+    auto size = sizeof(buf);
+    if (nvs_get_str(my_handle, WIFI_KEY, buf, &size) == ESP_OK)
+    {
+        creds = std::string(buf);
+        if (!creds.empty())
+            creds += std::string(":");
+    }
+    creds += std::string(ssid) + std::string(":") + std::string(password);
+    ESP_ERROR_CHECK(nvs_set_str(my_handle, WIFI_KEY, creds.c_str()));
     nvs_close(my_handle);
-    printf("OK: WiFi credentials set to %s/%s\n", ssid, password);
+    printf("OK: Added WiFi credentials %s/%s\n", ssid, password);
+    return 0;
+}
+
+int clear_wifi_credentials(int, char**)
+{
+    nvs_handle my_handle;
+    ESP_ERROR_CHECK(nvs_open("storage", NVS_READWRITE, &my_handle));
+    ESP_ERROR_CHECK(nvs_set_str(my_handle, WIFI_KEY, ""));
+    nvs_close(my_handle);
+    printf("OK: WiFi credentials cleared\n");
     return 0;
 }
 
@@ -175,17 +196,26 @@ void run_console()
 
     esp_console_register_help_command();
 
-    set_wifi_credentials_args.ssid = arg_str1(NULL, NULL, "<ssid>", "SSID");
-    set_wifi_credentials_args.password = arg_str1(NULL, NULL, "<password>", "Password");
-    set_wifi_credentials_args.end = arg_end(2);
-    const esp_console_cmd_t set_wifi_credentials_cmd = {
+    add_wifi_credentials_args.ssid = arg_str1(NULL, NULL, "<ssid>", "SSID");
+    add_wifi_credentials_args.password = arg_strn(NULL, NULL, "<password>", 0, 1, "Password");
+    add_wifi_credentials_args.end = arg_end(2);
+    const esp_console_cmd_t add_wifi_credentials_cmd = {
         .command = "wifi",
-        .help = "Set WiFi credentials",
+        .help = "Add WiFi credentials",
         .hint = nullptr,
-        .func = &set_wifi_credentials,
-        .argtable = &set_wifi_credentials_args
+        .func = &add_wifi_credentials,
+        .argtable = &add_wifi_credentials_args
     };
-    ESP_ERROR_CHECK(esp_console_cmd_register(&set_wifi_credentials_cmd));
+    ESP_ERROR_CHECK(esp_console_cmd_register(&add_wifi_credentials_cmd));
+
+    const esp_console_cmd_t clear_wifi_credentials_cmd = {
+        .command = "clearwifi",
+        .help = "Clear WiFi credentials",
+        .hint = nullptr,
+        .func = &clear_wifi_credentials,
+        .argtable = nullptr
+    };
+    ESP_ERROR_CHECK(esp_console_cmd_register(&clear_wifi_credentials_cmd));
 
     set_s3_credentials_args.access_key = arg_str1(NULL, NULL, "<access key>", "S3 access key");
     set_s3_credentials_args.secret_key = arg_str1(NULL, NULL, "<secret key>", "S3 secret key");
