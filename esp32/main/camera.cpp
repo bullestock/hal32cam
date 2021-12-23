@@ -1,5 +1,6 @@
 #include "defs.h"
 #include "motion.h"
+#include "upload.h"
 
 #include <esp_log.h>
 #include <esp_system.h>
@@ -80,6 +81,9 @@ void camera_task(void* mode)
     if (init_camera() != ESP_OK)
         return;
 
+    time_t last_heartbeat = 0;
+    time(&last_heartbeat);
+    
     while (1)
     {
         vTaskDelay(1000 / portTICK_RATE_MS);
@@ -106,9 +110,15 @@ void camera_task(void* mode)
         }
         printf("Picture size: %zu\n", pic->len);
 
-        motion_detect(mode != nullptr, pic, &timeinfo);
+        motion_detect(mode != nullptr, pic, timeinfo);
             
         // Release buffer
         esp_camera_fb_return(pic);
+
+        if (current - last_heartbeat > HEARTBEAT_RATE_SECS)
+        {
+            upload_heartbeat(timeinfo);
+            last_heartbeat = current;
+        }
     }
 }

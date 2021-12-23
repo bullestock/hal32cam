@@ -101,11 +101,11 @@ esp_err_t _http_event_handler(esp_http_client_event_t* evt)
 }
 
 void upload(const unsigned char* data, size_t size,
-            const struct tm* current,
+            const struct tm& current,
             const char* ext)
 {
     char ts[20];
-    strftime(ts, sizeof(ts), "%Y%m%d%H%M%S", current);
+    strftime(ts, sizeof(ts), "%Y%m%d%H%M%S", &current);
     char resource[40];
     sprintf(resource, "/hal9kcam/%d-%s.%s", (int) config_instance_number, ts, ext);
     
@@ -123,7 +123,7 @@ void upload(const unsigned char* data, size_t size,
     esp_http_client_set_post_field(client, reinterpret_cast<const char*>(data), size);
 
     char date[40];
-    strftime(date, sizeof(date), "%a, %d %b %Y %T %z", current);
+    strftime(date, sizeof(date), "%a, %d %b %Y %T %z", &current);
     esp_http_client_set_header(client, "Date", date);
     const char* content_type = "application/octet-stream";
     esp_http_client_set_header(client, "Content-Type", content_type);
@@ -155,7 +155,7 @@ void upload(const unsigned char* data, size_t size,
     esp_http_client_cleanup(client);
 }
 
-void upload(const camera_fb_t* fb, const struct tm* current)
+void upload(const camera_fb_t* fb, const struct tm& current)
 {
     // Picture
     
@@ -163,4 +163,10 @@ void upload(const camera_fb_t* fb, const struct tm* current)
     if (fb->format == PIXFORMAT_JPEG)
         ext = "jpg";
     upload(fb->buf, fb->len, current, ext);
+}
+
+void upload_heartbeat(const struct tm& current)
+{
+    static unsigned char dummy[] = { 0 };
+    upload(dummy, 1, current, "dummy");
 }

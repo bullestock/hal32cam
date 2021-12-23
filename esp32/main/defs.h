@@ -2,14 +2,14 @@
 
 #include "esp_camera.h"
 
-constexpr const char* VERSION = "0.4";
+constexpr const char* VERSION = "0.5";
 
 constexpr const char* WIFI_KEY = "wifi";
 constexpr const char* S3_ACCESS_KEY = "s3a";
 constexpr const char* S3_SECRET_KEY = "s3s";
 constexpr const char* INSTANCE_KEY = "inst";
 
-constexpr const int FLASH_ON_TIME_SECS = 60;
+constexpr const int HEARTBEAT_RATE_SECS = 10*60;
 
 constexpr const auto MODE_HIGH_PIN = (gpio_num_t) 14;
 constexpr const auto MODE_SELECT_PIN = (gpio_num_t) 15;

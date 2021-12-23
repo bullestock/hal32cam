@@ -5,4 +5,6 @@
 #include "esp_camera.h"
 
 void upload(const camera_fb_t* fb,
-            const struct tm* current);
+            const struct tm& current);
+
+void upload_heartbeat(const struct tm& current);

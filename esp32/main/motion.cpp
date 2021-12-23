@@ -57,7 +57,7 @@ void downsample(const camera_fb_t* fb,
     /*ESP_ERROR_CHECK*/(!decoder.decode(0, 0, JPEG_SCALE_EIGHTH)); // can fail
 }
 
-bool motion_detect(bool force, const camera_fb_t* fb, const struct tm* cur_tm)
+bool motion_detect(bool force, const camera_fb_t* fb, const struct tm& cur_tm)
 {
     if (!force)
     {
