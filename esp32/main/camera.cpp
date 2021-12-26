@@ -85,13 +85,19 @@ void camera_task(void* mode)
     
     while (1)
     {
-        vTaskDelay(1000 / portTICK_RATE_MS);
+        vTaskDelay(100 / portTICK_RATE_MS);
 
         // Get current time
         time_t current = 0;
         time(&current);
         struct tm timeinfo;
         gmtime_r(&current, &timeinfo);
+
+        if (current - last_heartbeat > config_keepalive_secs)
+        {
+            heartbeat(timeinfo);
+            last_heartbeat = current;
+        }
 
         char ts[20];
         strftime(ts, sizeof(ts), "%Y%m%d%H%M%S", &timeinfo);
@@ -113,11 +119,5 @@ void camera_task(void* mode)
             
         // Release buffer
         esp_camera_fb_return(pic);
-
-        if (current - last_heartbeat > HEARTBEAT_RATE_SECS)
-        {
-            heartbeat(timeinfo);
-            last_heartbeat = current;
-        }
     }
 }

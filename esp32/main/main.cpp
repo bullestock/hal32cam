@@ -101,6 +101,9 @@ char config_s3_access_key[40];
 char config_s3_secret_key[40];
 char config_gateway_token[80];
 int8_t config_instance_number = 0;
+int config_keepalive_secs = DEFAULT_KEEPALIVE_SECS;
+int config_pixel_threshold = DEFAULT_PIXEL_THRESHOLD;
+int config_percent_threshold = DEFAULT_PERCENT_THRESHOLD;
 
 void flash_led(int n)
 {

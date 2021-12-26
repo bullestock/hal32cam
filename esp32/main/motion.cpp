@@ -78,11 +78,11 @@ bool motion_detect(bool force, const camera_fb_t* fb, const struct tm& cur_tm)
         for (int i = 0; i < sizeof(buf1); ++i)
         {
             const auto diff = abs(static_cast<int>(new_buf[i]) - static_cast<int>(old_buf[i]));
-            if (diff > PIXEL_THRESHOLD)
+            if (diff > config_pixel_threshold)
                 ++changes;
         }
         printf("%d changes\n", changes);
-        if ((changes*100)/BUFFER_BYTESIZE < PERCENT_THRESHOLD)
+        if ((changes*100)/BUFFER_BYTESIZE < config_percent_threshold)
             return false;
     }
     upload(fb, cur_tm);

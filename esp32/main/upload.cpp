@@ -12,6 +12,8 @@
 #include "esp_netif.h"
 #include "esp_tls.h"
 
+#include "cJSON.h"
+
 #include "mbedtls/base64.h"
 #include "mbedtls/md.h"
 
@@ -32,8 +34,6 @@ extern const char howsmyssl_com_root_cert_pem_end[]   asm("_binary_howsmyssl_com
 
 esp_err_t _http_event_handler(esp_http_client_event_t* evt)
 {
-    static char* output_buffer;  // Buffer to store response of http request from event handler
-    static int output_len;       // Stores number of bytes read
     switch(evt->event_id) {
     case HTTP_EVENT_ERROR:
         ESP_LOGD(TAG, "HTTP_EVENT_ERROR");
@@ -48,50 +48,21 @@ esp_err_t _http_event_handler(esp_http_client_event_t* evt)
         ESP_LOGD(TAG, "HTTP_EVENT_ON_HEADER, key=%s, value=%s", evt->header_key, evt->header_value);
         break;
     case HTTP_EVENT_ON_DATA:
-        ESP_LOGD(TAG, "HTTP_EVENT_ON_DATA, len=%d", evt->data_len);
-        /*
-         *  Check for chunked encoding is added as the URL for chunked encoding used in this example returns binary data.
-         *  However, event handler can also be used in case chunked encoding is used.
-         */
-        if (!esp_http_client_is_chunked_response(evt->client)) {
-            // If user_data buffer is configured, copy the response into the buffer
-            if (evt->user_data)
-                memcpy(reinterpret_cast<char*>(evt->user_data) + output_len, evt->data, evt->data_len);
-            else {
-                if (output_buffer == nullptr) {
-                    output_buffer = (char* ) malloc(esp_http_client_get_content_length(evt->client));
-                    output_len = 0;
-                    if (output_buffer == nullptr) {
-                        ESP_LOGE(TAG, "Failed to allocate memory for output buffer");
-                        return ESP_FAIL;
-                    }
-                }
-                memcpy(output_buffer + output_len, evt->data, evt->data_len);
-            }
-            output_len += evt->data_len;
+        if (evt->user_data)
+        {
+            auto p = reinterpret_cast<char*>(evt->user_data);
+            memcpy(p, evt->data, evt->data_len);
+            p[evt->data_len] = 0;
         }
-
         break;
     case HTTP_EVENT_ON_FINISH:
         ESP_LOGD(TAG, "HTTP_EVENT_ON_FINISH");
-        if (output_buffer != nullptr) {
-            // Response is accumulated in output_buffer. Uncomment the below line to print the accumulated response
-            // ESP_LOG_BUFFER_HEX(TAG, output_buffer, output_len);
-            free(output_buffer);
-            output_buffer = nullptr;
-        }
-        output_len = 0;
         break;
     case HTTP_EVENT_DISCONNECTED:
         ESP_LOGI(TAG, "HTTP_EVENT_DISCONNECTED");
         int mbedtls_err = 0;
         esp_err_t err = esp_tls_get_and_clear_last_error(reinterpret_cast<esp_tls_error_handle_t>(evt->data), &mbedtls_err, nullptr);
         if (err != 0) {
-            if (output_buffer != nullptr) {
-                free(output_buffer);
-                output_buffer = nullptr;
-            }
-            output_len = 0;
             ESP_LOGI(TAG, "Last esp error code: 0x%x", err);
             ESP_LOGI(TAG, "Last mbedtls failure: 0x%x", mbedtls_err);
         }
@@ -169,12 +140,14 @@ void heartbeat(const struct tm& current)
 {
     char resource[20];
     sprintf(resource, "/camera/%d", (int) config_instance_number);
+    char buffer[256];
     esp_http_client_config_t config {
         .host = "acsgateway.hal9k.dk",
         .path = resource,
         .cert_pem = howsmyssl_com_root_cert_pem_start,
         .event_handler = _http_event_handler,
         .transport_type = HTTP_TRANSPORT_OVER_SSL,
+        .user_data = buffer
     };
     esp_http_client_handle_t client = esp_http_client_init(&config);
 
@@ -189,8 +162,42 @@ void heartbeat(const struct tm& current)
 
     if (err == ESP_OK)
     {
-        ESP_LOGI(TAG, "Heartbeat status = %d",
-                 esp_http_client_get_status_code(client));
+        ESP_LOGI(TAG, "Heartbeat status = %d", esp_http_client_get_status_code(client));
+        auto root = cJSON_Parse(buffer);
+        if (root)
+        {
+            auto keepalive_node = cJSON_GetObjectItem(root, "keepalive");
+            if (keepalive_node)
+            {
+                auto keepalive = keepalive_node->valueint;
+                if (keepalive != config_keepalive_secs)
+                {
+                    printf("New keepalive %d\n", keepalive);
+                    config_keepalive_secs = keepalive;
+                }
+            }
+            auto percent_node = cJSON_GetObjectItem(root, "percent");
+            if (percent_node)
+            {
+                auto percent = percent_node->valueint;
+                if (percent != config_percent_threshold)
+                {
+                    printf("New percent threshold %d\n", percent);
+                    config_percent_threshold = percent;
+                }
+            }
+            auto pixel_node = cJSON_GetObjectItem(root, "pixel");
+            if (pixel_node)
+            {
+                auto pixel = pixel_node->valueint;
+                if (pixel != config_pixel_threshold)
+                {
+                    printf("New pixel threshold %d\n", pixel);
+                    config_pixel_threshold = pixel;
+                }
+            }
+            cJSON_Delete(root);
+        }
     }
     else
         ESP_LOGE(TAG, "Error performing http request %s", esp_err_to_name(err));
