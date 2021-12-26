@@ -20,7 +20,7 @@ struct
     struct arg_str* ssid;
     struct arg_str* password;
     struct arg_end* end;
-}  add_wifi_credentials_args;
+} add_wifi_credentials_args;
 
 int add_wifi_credentials(int argc, char** argv)
 {
@@ -70,7 +70,7 @@ struct
     struct arg_str* access_key;
     struct arg_str* secret_key;
     struct arg_end* end;
-}  set_s3_credentials_args;
+} set_s3_credentials_args;
 
 int set_s3_credentials(int argc, char** argv)
 {
@@ -98,6 +98,34 @@ int set_s3_credentials(int argc, char** argv)
     ESP_ERROR_CHECK(nvs_set_str(my_handle, S3_SECRET_KEY, secret_key));
     nvs_close(my_handle);
     printf("OK: S3 credentials set to %s/%s\n", access_key, secret_key);
+    return 0;
+}
+
+struct
+{
+    struct arg_str* token;
+    struct arg_end* end;
+} set_gw_credentials_args;
+
+int set_gw_credentials(int argc, char** argv)
+{
+    int nerrors = arg_parse(argc, argv, (void**) &set_gw_credentials_args);
+    if (nerrors != 0)
+    {
+        arg_print_errors(stderr, set_gw_credentials_args.end, argv[0]);
+        return 1;
+    }
+    const auto token = set_gw_credentials_args.token->sval[0];
+    if (strlen(token) < 32)
+    {
+        printf("ERROR: Invalid token\n");
+        return 1;
+    }
+    nvs_handle my_handle;
+    ESP_ERROR_CHECK(nvs_open("storage", NVS_READWRITE, &my_handle));
+    ESP_ERROR_CHECK(nvs_set_str(my_handle, GATEWAY_TOKEN_KEY, token));
+    nvs_close(my_handle);
+    printf("OK: Gateway token set to %s\n", token);
     return 0;
 }
 
@@ -228,6 +256,17 @@ void run_console()
         .argtable = &set_s3_credentials_args
     };
     ESP_ERROR_CHECK(esp_console_cmd_register(&set_s3_credentials_cmd));
+
+    set_gw_credentials_args.token = arg_str1(NULL, NULL, "<token>", "Gateway token");
+    set_gw_credentials_args.end = arg_end(2);
+    const esp_console_cmd_t set_gw_credentials_cmd = {
+        .command = "gw",
+        .help = "Set gateway credentials",
+        .hint = nullptr,
+        .func = &set_gw_credentials,
+        .argtable = &set_gw_credentials_args
+    };
+    ESP_ERROR_CHECK(esp_console_cmd_register(&set_gw_credentials_cmd));
 
     set_instance_args.power = arg_int1(NULL, NULL, "<instance>", "Instance number (0-255)");
     set_instance_args.end = arg_end(2);

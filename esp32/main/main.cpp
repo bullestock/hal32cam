@@ -71,7 +71,9 @@ void get_nvs_string(nvs_handle my_handle, const char* key, char* buf, size_t buf
         break;
     }
     printf("Restart in 10 seconds\n");
-    vTaskDelay(10000 / portTICK_RATE_MS);
+    vTaskDelay(5000 / portTICK_RATE_MS);
+    printf("Restart in 5 seconds\n");
+    vTaskDelay(5000 / portTICK_RATE_MS);
     esp_restart();
 }
 
@@ -97,6 +99,7 @@ void get_nvs_i8(nvs_handle my_handle, const char* key, int8_t& value)
 
 char config_s3_access_key[40];
 char config_s3_secret_key[40];
+char config_gateway_token[80];
 int8_t config_instance_number = 0;
 
 void flash_led(int n)
@@ -190,6 +193,7 @@ void app_main()
     const auto creds = get_wifi_credentials(buf);
     get_nvs_string(my_handle, S3_ACCESS_KEY, config_s3_access_key, sizeof(config_s3_access_key));
     get_nvs_string(my_handle, S3_SECRET_KEY, config_s3_secret_key, sizeof(config_s3_secret_key));
+    get_nvs_string(my_handle, GATEWAY_TOKEN_KEY, config_gateway_token, sizeof(config_gateway_token));
     get_nvs_i8(my_handle, INSTANCE_KEY, config_instance_number);
     nvs_close(my_handle);
 

@@ -82,7 +82,6 @@ void camera_task(void* mode)
         return;
 
     time_t last_heartbeat = 0;
-    time(&last_heartbeat);
     
     while (1)
     {
@@ -117,7 +116,7 @@ void camera_task(void* mode)
 
         if (current - last_heartbeat > HEARTBEAT_RATE_SECS)
         {
-            upload_heartbeat(timeinfo);
+            heartbeat(timeinfo);
             last_heartbeat = current;
         }
     }

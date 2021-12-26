@@ -165,8 +165,35 @@ void upload(const camera_fb_t* fb, const struct tm& current)
     upload(fb->buf, fb->len, current, ext);
 }
 
-void upload_heartbeat(const struct tm& current)
+void heartbeat(const struct tm& current)
 {
-    static unsigned char dummy[] = { 0 };
-    upload(dummy, 1, current, "dummy");
+    char resource[20];
+    sprintf(resource, "/camera/%d", (int) config_instance_number);
+    esp_http_client_config_t config {
+        .host = "acsgateway.hal9k.dk",
+        .path = resource,
+        .cert_pem = howsmyssl_com_root_cert_pem_start,
+        .event_handler = _http_event_handler,
+        .transport_type = HTTP_TRANSPORT_OVER_SSL,
+    };
+    esp_http_client_handle_t client = esp_http_client_init(&config);
+
+    esp_http_client_set_method(client, HTTP_METHOD_GET);
+
+    char bearer[80];
+    snprintf(bearer, sizeof(bearer), "Bearer %s", config_gateway_token);
+    esp_http_client_set_header(client, "Authentication", bearer);
+    const char* content_type = "application/json";
+    esp_http_client_set_header(client, "Content-Type", content_type);
+    esp_err_t err = esp_http_client_perform(client);
+
+    if (err == ESP_OK)
+    {
+        ESP_LOGI(TAG, "Heartbeat status = %d",
+                 esp_http_client_get_status_code(client));
+    }
+    else
+        ESP_LOGE(TAG, "Error performing http request %s", esp_err_to_name(err));
+    
+    esp_http_client_cleanup(client);
 }

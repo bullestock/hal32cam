@@ -2,12 +2,13 @@
 
 #include "esp_camera.h"
 
-constexpr const char* VERSION = "0.5";
+constexpr const char* VERSION = "0.6";
 
 constexpr const char* WIFI_KEY = "wifi";
 constexpr const char* S3_ACCESS_KEY = "s3a";
 constexpr const char* S3_SECRET_KEY = "s3s";
 constexpr const char* INSTANCE_KEY = "inst";
+constexpr const char* GATEWAY_TOKEN_KEY = "gwt";
 
 constexpr const int HEARTBEAT_RATE_SECS = 10*60;
 
@@ -16,6 +17,7 @@ constexpr const auto MODE_SELECT_PIN = (gpio_num_t) 15;
 
 extern char config_s3_access_key[];
 extern char config_s3_secret_key[];
+extern char config_gateway_token[];
 extern int8_t config_instance_number;
 
 constexpr const char* TAG = "HAL32CAM";
