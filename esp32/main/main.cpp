@@ -164,7 +164,6 @@ void app_main()
     ESP_ERROR_CHECK(esp_event_loop_create_default());
 
     printf("HAL32CAM v %s\n", VERSION);
-    printf("Instance %d\n", config_instance_number);
     printf("Press a key to enter console\n");
     bool debug = false;
     for (int i = 0; i < 20; ++i)
@@ -192,6 +191,7 @@ void app_main()
     get_nvs_string(my_handle, GATEWAY_TOKEN_KEY, config_gateway_token, sizeof(config_gateway_token));
     get_nvs_i8(my_handle, INSTANCE_KEY, config_instance_number);
     nvs_close(my_handle);
+    printf("Instance %d\n", config_instance_number);
 
     // Connect to WiFi
     ESP_ERROR_CHECK(connect(creds));

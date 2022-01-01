@@ -14,9 +14,9 @@ extern const char howsmyssl_com_root_cert_pem_end[]   asm("_binary_howsmyssl_com
 
 void heartbeat(const struct tm& current)
 {
-    char resource[40];
-    sprintf(resource, "/camera/%d?active=%d&continuous=%d",
-            (int) config_instance_number, (int) config_active, (int) config_continuous);
+    char resource[80];
+    sprintf(resource, "/camera/%d?active=%d&continuous=%d&version=%s",
+            (int) config_instance_number, (int) config_active, (int) config_continuous, VERSION);
     char buffer[256];
     esp_http_client_config_t config {
         .host = "acsgateway.hal9k.dk",
