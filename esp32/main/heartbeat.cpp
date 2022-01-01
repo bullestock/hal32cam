@@ -15,8 +15,8 @@ extern const char howsmyssl_com_root_cert_pem_end[]   asm("_binary_howsmyssl_com
 void heartbeat(const struct tm& current)
 {
     char resource[40];
-    sprintf(resource, "/camera/%d?active=%d",
-            (int) config_instance_number, (int) config_active);
+    sprintf(resource, "/camera/%d?active=%d&continuous=%d",
+            (int) config_instance_number, (int) config_active, (int) config_continuous);
     char buffer[256];
     esp_http_client_config_t config {
         .host = "acsgateway.hal9k.dk",
@@ -86,6 +86,16 @@ void heartbeat(const struct tm& current)
                 {
                     printf("Going inactive\n");
                     config_active = false;
+                }
+                else if (action == "continuous" && !config_continuous)
+                {
+                    printf("Switching to continuous mode\n");
+                    config_continuous = true;
+                }
+                else if (action == "motion" && config_continuous)
+                {
+                    printf("Switching to motion detect mode\n");
+                    config_continuous = false;
                 }
             }
             cJSON_Delete(root);

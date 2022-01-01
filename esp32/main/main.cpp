@@ -105,6 +105,7 @@ int config_keepalive_secs = DEFAULT_KEEPALIVE_SECS;
 int config_pixel_threshold = DEFAULT_PIXEL_THRESHOLD;
 int config_percent_threshold = DEFAULT_PERCENT_THRESHOLD;
 bool config_active = true;
+bool config_continuous = false;
 
 void flash_led(int n)
 {
@@ -145,16 +146,8 @@ void app_main()
     gpio_config_t io_conf;
     io_conf.intr_type = GPIO_INTR_DISABLE;
     io_conf.mode = GPIO_MODE_OUTPUT;
-    io_conf.pin_bit_mask = (1ULL << 4) | (1ULL << MODE_HIGH_PIN);
+    io_conf.pin_bit_mask = (1ULL << 4);
     io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
-    io_conf.pull_up_en = GPIO_PULLUP_DISABLE;
-    ESP_ERROR_CHECK(gpio_config(&io_conf));
-    gpio_set_level(MODE_HIGH_PIN, 1);
-    // Configure mode select pin
-    io_conf.intr_type = GPIO_INTR_DISABLE;
-    io_conf.mode = GPIO_MODE_INPUT;
-    io_conf.pin_bit_mask = 1ULL << MODE_SELECT_PIN;
-    io_conf.pull_down_en = GPIO_PULLDOWN_ENABLE;
     io_conf.pull_up_en = GPIO_PULLUP_DISABLE;
     ESP_ERROR_CHECK(gpio_config(&io_conf));
 
@@ -171,8 +164,7 @@ void app_main()
     ESP_ERROR_CHECK(esp_event_loop_create_default());
 
     printf("HAL32CAM v %s\n", VERSION);
-    const auto mode = gpio_get_level(MODE_SELECT_PIN);
-    printf("Instance %d, mode select %d\n", config_instance_number, mode);
+    printf("Instance %d\n", config_instance_number);
     printf("Press a key to enter console\n");
     bool debug = false;
     for (int i = 0; i < 20; ++i)
@@ -220,6 +212,6 @@ void app_main()
         obtain_time();
     }
     
-    xTaskCreate(&camera_task, "camera_task", 32768, (void*) mode, 5, nullptr);
+    xTaskCreate(&camera_task, "camera_task", 32768, nullptr, 5, nullptr);
     xTaskCreate(&watchdog_task, "watchdog_task", 2048, nullptr, 5, nullptr);
 }

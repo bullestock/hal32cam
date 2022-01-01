@@ -2,7 +2,7 @@
 
 #include "esp_camera.h"
 
-constexpr const char* VERSION = "0.8";
+constexpr const char* VERSION = "0.9";
 
 constexpr const char* WIFI_KEY = "wifi";
 constexpr const char* S3_ACCESS_KEY = "s3a";
@@ -12,9 +12,6 @@ constexpr const char* GATEWAY_TOKEN_KEY = "gwt";
 
 constexpr const int DEFAULT_KEEPALIVE_SECS = 60;
 
-constexpr const auto MODE_HIGH_PIN = (gpio_num_t) 14;
-constexpr const auto MODE_SELECT_PIN = (gpio_num_t) 15;
-
 extern char config_s3_access_key[];
 extern char config_s3_secret_key[];
 extern char config_gateway_token[];
@@ -23,6 +20,7 @@ extern int config_keepalive_secs;
 extern int config_pixel_threshold;
 extern int config_percent_threshold;
 extern bool config_active;
+extern bool config_continuous;
 
 constexpr const char* TAG = "HAL32CAM";
 
