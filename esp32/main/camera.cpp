@@ -1,4 +1,5 @@
 #include "defs.h"
+#include "heartbeat.h"
 #include "motion.h"
 #include "upload.h"
 
@@ -99,25 +100,28 @@ void camera_task(void* mode)
             last_heartbeat = current;
         }
 
-        char ts[20];
-        strftime(ts, sizeof(ts), "%Y%m%d%H%M%S", &timeinfo);
-        printf("Taking picture: %s\n", ts);
-#if USE_FLASH
-        gpio_set_level((gpio_num_t) 4, true);
-        vTaskDelay(100 / portTICK_RATE_MS);
-#endif
-        auto pic = esp_camera_fb_get();
-        gpio_set_level((gpio_num_t) 4, false);
-        if (!pic)
+        if (config_active)
         {
-            ESP_LOGE(TAG, "No picture taken!");
-            continue;
-        }
-        printf("Picture size: %zu\n", pic->len);
+            char ts[20];
+            strftime(ts, sizeof(ts), "%Y%m%d%H%M%S", &timeinfo);
+            printf("Taking picture: %s...", ts);
+#if USE_FLASH
+            gpio_set_level((gpio_num_t) 4, true);
+            vTaskDelay(100 / portTICK_RATE_MS);
+#endif
+            auto pic = esp_camera_fb_get();
+            gpio_set_level((gpio_num_t) 4, false);
+            if (!pic)
+            {
+                ESP_LOGE(TAG, "No picture taken!");
+                continue;
+            }
+            printf("size: %zu...", pic->len);
 
-        motion_detect(mode != nullptr, pic, timeinfo);
+            motion_detect(mode != nullptr, pic, timeinfo);
             
-        // Release buffer
-        esp_camera_fb_return(pic);
+            // Release buffer
+            esp_camera_fb_return(pic);
+        }
     }
 }

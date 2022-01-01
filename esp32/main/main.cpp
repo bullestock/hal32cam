@@ -104,6 +104,7 @@ int8_t config_instance_number = 0;
 int config_keepalive_secs = DEFAULT_KEEPALIVE_SECS;
 int config_pixel_threshold = DEFAULT_PIXEL_THRESHOLD;
 int config_percent_threshold = DEFAULT_PERCENT_THRESHOLD;
+bool config_active = true;
 
 void flash_led(int n)
 {
@@ -171,7 +172,7 @@ void app_main()
 
     printf("HAL32CAM v %s\n", VERSION);
     const auto mode = gpio_get_level(MODE_SELECT_PIN);
-    printf("Mode select %d\n", mode);
+    printf("Instance %d, mode select %d\n", config_instance_number, mode);
     printf("Press a key to enter console\n");
     bool debug = false;
     for (int i = 0; i < 20; ++i)
