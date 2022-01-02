@@ -83,6 +83,7 @@ void camera_task(void*)
         return;
 
     time_t last_heartbeat = 0;
+    time_t last_pic = 0;
     
     while (1)
     {
@@ -96,7 +97,7 @@ void camera_task(void*)
 
         if (current - last_heartbeat > config_keepalive_secs)
         {
-            heartbeat(timeinfo);
+            heartbeat(timeinfo, last_pic);
             last_heartbeat = current;
         }
 
@@ -118,7 +119,8 @@ void camera_task(void*)
             }
             printf("size: %zu...", pic->len);
 
-            motion_detect(pic, timeinfo);
+            if (motion_detect(pic, timeinfo))
+                last_pic = current;
             
             // Release buffer
             esp_camera_fb_return(pic);

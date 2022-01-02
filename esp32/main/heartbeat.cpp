@@ -12,11 +12,20 @@
 extern const char howsmyssl_com_root_cert_pem_start[] asm("_binary_howsmyssl_com_root_cert_pem_start");
 extern const char howsmyssl_com_root_cert_pem_end[]   asm("_binary_howsmyssl_com_root_cert_pem_end");
 
-void heartbeat(const struct tm& current)
+void heartbeat(const struct tm& current,
+               time_t last_pic)
 {
+    struct tm timeinfo;
+    gmtime_r(&last_pic, &timeinfo);
+    char ts[20];
+    strftime(ts, sizeof(ts), "%Y%m%d%H%M%S", &timeinfo);
     char resource[80];
-    sprintf(resource, "/camera/%d?active=%d&continuous=%d&version=%s",
-            (int) config_instance_number, (int) config_active, (int) config_continuous, VERSION);
+    sprintf(resource, "/camera/%d?active=%d&continuous=%d&version=%s&last_pic=%s",
+            (int) config_instance_number,
+            (int) config_active,
+            (int) config_continuous,
+            VERSION,
+            ts);
     char buffer[256];
     esp_http_client_config_t config {
         .host = "acsgateway.hal9k.dk",
