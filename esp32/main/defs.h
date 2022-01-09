@@ -2,7 +2,7 @@
 
 #include "esp_camera.h"
 
-constexpr const char* VERSION = "0.10";
+constexpr const char* VERSION = "0.11";
 
 constexpr const char* WIFI_KEY = "wifi";
 constexpr const char* S3_ACCESS_KEY = "s3a";

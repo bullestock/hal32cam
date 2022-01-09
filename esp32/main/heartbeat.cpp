@@ -15,12 +15,15 @@ extern const char howsmyssl_com_root_cert_pem_end[]   asm("_binary_howsmyssl_com
 void heartbeat(const struct tm& current,
                time_t last_pic)
 {
-    struct tm timeinfo;
-    gmtime_r(&last_pic, &timeinfo);
-    char ts[20];
-    strftime(ts, sizeof(ts), "%Y%m%d%H%M%S", &timeinfo);
-    char resource[80];
-    sprintf(resource, "/camera/%d?active=%d&continuous=%d&version=%s&last_pic=%s",
+    char ts[35] = { 0 };
+    if (last_pic)
+    {
+        struct tm timeinfo;
+        gmtime_r(&last_pic, &timeinfo);
+        strftime(ts, sizeof(ts), "&last_pic=%Y-%m-%d%%20%H:%M:%S", &timeinfo);
+    }
+    char resource[85];
+    sprintf(resource, "/camera/%d?active=%d&continuous=%d&version=%s%s",
             (int) config_instance_number,
             (int) config_active,
             (int) config_continuous,
