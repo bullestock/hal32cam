@@ -44,17 +44,6 @@ void obtain_time()
     }
 }
 
-void watchdog_task(void*)
-{
-    int n = 0;
-    while (1)
-    {
-        vTaskDelay(10000 / portTICK_RATE_MS);
-        printf("WD %d\n", n);
-        ++n;
-    }
-}
-
 // Reboots if key not found
 void get_nvs_string(nvs_handle my_handle, const char* key, char* buf, size_t buf_size)
 {
@@ -146,7 +135,7 @@ void app_main()
     gpio_config_t io_conf;
     io_conf.intr_type = GPIO_INTR_DISABLE;
     io_conf.mode = GPIO_MODE_OUTPUT;
-    io_conf.pin_bit_mask = (1ULL << 4);
+    io_conf.pin_bit_mask = (1ULL << 4) | (1ULL << LED_PIN);
     io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
     io_conf.pull_up_en = GPIO_PULLUP_DISABLE;
     ESP_ERROR_CHECK(gpio_config(&io_conf));
@@ -213,5 +202,4 @@ void app_main()
     }
     
     xTaskCreate(&camera_task, "camera_task", 32768, nullptr, 5, nullptr);
-    xTaskCreate(&watchdog_task, "watchdog_task", 2048, nullptr, 5, nullptr);
 }

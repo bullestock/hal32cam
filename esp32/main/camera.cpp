@@ -77,6 +77,14 @@ static esp_err_t init_camera()
     return ESP_OK;
 }
 
+void flash_indicator_led()
+{
+    gpio_set_level(LED_PIN, true);
+    vTaskDelay(10 / portTICK_RATE_MS);
+    gpio_set_level(LED_PIN, false);
+}
+
+
 void camera_task(void*)
 {
     if (init_camera() != ESP_OK)
@@ -103,6 +111,7 @@ void camera_task(void*)
 
         if (config_active)
         {
+            flash_indicator_led();
             char ts[20];
             strftime(ts, sizeof(ts), "%Y%m%d%H%M%S", &timeinfo);
             printf("Taking picture: %s...", ts);

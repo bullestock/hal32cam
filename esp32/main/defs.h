@@ -2,7 +2,7 @@
 
 #include "esp_camera.h"
 
-constexpr const char* VERSION = "0.11";
+constexpr const char* VERSION = "0.12";
 
 constexpr const char* WIFI_KEY = "wifi";
 constexpr const char* S3_ACCESS_KEY = "s3a";
@@ -11,6 +11,8 @@ constexpr const char* INSTANCE_KEY = "inst";
 constexpr const char* GATEWAY_TOKEN_KEY = "gwt";
 
 constexpr const int DEFAULT_KEEPALIVE_SECS = 60;
+
+constexpr const auto LED_PIN = (gpio_num_t) 12;
 
 extern char config_s3_access_key[];
 extern char config_s3_secret_key[];
