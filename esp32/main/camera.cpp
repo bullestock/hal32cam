@@ -80,7 +80,7 @@ static esp_err_t init_camera()
 void flash_indicator_led()
 {
     gpio_set_level(LED_PIN, true);
-    vTaskDelay(10 / portTICK_RATE_MS);
+    vTaskDelay(10 / portTICK_PERIOD_MS);
     gpio_set_level(LED_PIN, false);
 }
 
@@ -95,7 +95,7 @@ void camera_task(void*)
     
     while (1)
     {
-        vTaskDelay(100 / portTICK_RATE_MS);
+        vTaskDelay(100 / portTICK_PERIOD_MS);
 
         // Get current time
         time_t current = 0;
@@ -117,7 +117,7 @@ void camera_task(void*)
             printf("Taking picture: %s...", ts);
 #if USE_FLASH
             gpio_set_level((gpio_num_t) 4, true);
-            vTaskDelay(100 / portTICK_RATE_MS);
+            vTaskDelay(100 / portTICK_PERIOD_MS);
 #endif
             auto pic = esp_camera_fb_get();
             gpio_set_level((gpio_num_t) 4, false);

@@ -60,7 +60,7 @@ if(IDF_TARGET STREQUAL "esp32" OR IDF_TARGET STREQUAL "esp32s2" OR IDF_TARGET ST
   endif()
 
   set(COMPONENT_REQUIRES driver)
-  set(COMPONENT_PRIV_REQUIRES freertos nvs_flash)
+  set(COMPONENT_PRIV_REQUIRES freertos nvs_flash esp_timer)
 
   register_component()
 endif()

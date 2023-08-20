@@ -60,9 +60,9 @@ void get_nvs_string(nvs_handle my_handle, const char* key, char* buf, size_t buf
         break;
     }
     printf("Restart in 10 seconds\n");
-    vTaskDelay(5000 / portTICK_RATE_MS);
+    vTaskDelay(5000 / portTICK_PERIOD_MS);
     printf("Restart in 5 seconds\n");
-    vTaskDelay(5000 / portTICK_RATE_MS);
+    vTaskDelay(5000 / portTICK_PERIOD_MS);
     esp_restart();
 }
 
@@ -82,7 +82,7 @@ void get_nvs_i8(nvs_handle my_handle, const char* key, int8_t& value)
         break;
     }
     printf("Restart in 10 seconds\n");
-    vTaskDelay(10000 / portTICK_RATE_MS);
+    vTaskDelay(10000 / portTICK_PERIOD_MS);
     esp_restart();
 }
 
@@ -104,7 +104,7 @@ void flash_led(int n)
         ets_delay_us(10);
         gpio_set_level((gpio_num_t) 4, false);
         if (i < n-1)
-            vTaskDelay(200 / portTICK_RATE_MS);
+            vTaskDelay(200 / portTICK_PERIOD_MS);
     }
 }
 

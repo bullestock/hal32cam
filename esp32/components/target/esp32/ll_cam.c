@@ -18,20 +18,8 @@
 #include "soc/periph_defs.h"
 #include "driver/periph_ctrl.h"
 #include "esp_idf_version.h"
-#if (ESP_IDF_VERSION_MAJOR >= 4) && (ESP_IDF_VERSION_MINOR > 1)
+#include "rom/gpio.h"
 #include "hal/gpio_ll.h"
-#else
-#include "soc/gpio_periph.h"
-#define esp_rom_delay_us ets_delay_us
-static inline int gpio_ll_get_level(gpio_dev_t *hw, int gpio_num)
-{
-    if (gpio_num < 32) {
-        return (hw->in >> gpio_num) & 0x1;
-    } else {
-        return (hw->in1.data >> (gpio_num - 32)) & 0x1;
-    }
-}
-#endif
 #include "ll_cam.h"
 #include "xclk.h"
 #include "cam_hal.h"
@@ -197,7 +185,7 @@ static void IRAM_ATTR ll_cam_vsync_isr(void *arg)
     cam_obj_t *cam = (cam_obj_t *)arg;
     BaseType_t HPTaskAwoken = pdFALSE;
     // filter
-    ets_delay_us(1);
+    esp_rom_delay_us(1);
     if (gpio_ll_get_level(&GPIO, cam->vsync_pin) == !cam->vsync_invert) {
         ll_cam_send_event(cam, CAM_VSYNC_EVENT, &HPTaskAwoken);
         if (HPTaskAwoken == pdTRUE) {
@@ -439,8 +427,15 @@ static bool ll_cam_calc_rgb_dma(cam_obj_t *cam){
     // Calculate DMA size
     dma_buffer_size =(dma_buffer_max / dma_half_buffer) * dma_half_buffer;
     
-    ESP_LOGI(TAG, "node_size: %4u, nodes_per_line: %u, lines_per_node: %u, dma_half_buffer_min: %5u, dma_half_buffer: %5u, lines_per_half_buffer: %2u, dma_buffer_size: %5u, image_size: %u", 
-            node_size * cam->dma_bytes_per_item, nodes_per_line, lines_per_node, dma_half_buffer_min * cam->dma_bytes_per_item, dma_half_buffer * cam->dma_bytes_per_item, lines_per_half_buffer, dma_buffer_size * cam->dma_bytes_per_item, image_size);
+    ESP_LOGI(TAG, "node_size: %4u, nodes_per_line: %u, lines_per_node: %u, dma_half_buffer_min: %5u, "
+             "dma_half_buffer: %5u, lines_per_half_buffer: %2u, dma_buffer_size: %5u, image_size: %u", 
+             (unsigned) (node_size * cam->dma_bytes_per_item),
+             (unsigned) nodes_per_line, (unsigned) lines_per_node,
+             (unsigned) (dma_half_buffer_min * cam->dma_bytes_per_item),
+             (unsigned) (dma_half_buffer * cam->dma_bytes_per_item),
+             (unsigned) lines_per_half_buffer,
+             (unsigned) (dma_buffer_size * cam->dma_bytes_per_item),
+             (unsigned) image_size);
 
     cam->dma_buffer_size = dma_buffer_size * cam->dma_bytes_per_item;
     cam->dma_half_buffer_size = dma_half_buffer * cam->dma_bytes_per_item;

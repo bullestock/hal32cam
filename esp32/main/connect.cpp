@@ -25,7 +25,7 @@
 #include "lwip/err.h"
 #include "lwip/sys.h"
 
-static xSemaphoreHandle s_semph_get_ip_addrs;
+static SemaphoreHandle_t s_semph_get_ip_addrs;
 static esp_netif_t* s_esp_netif = NULL;
 
 static esp_netif_t* wifi_start(const std::pair<std::string, std::string>& creds);
@@ -104,7 +104,7 @@ esp_err_t disconnect()
 static void on_wifi_disconnect(void* arg, esp_event_base_t event_base,
                                int32_t event_id, void* event_data)
 {
-    ESP_LOGI(TAG, "on_wifi_disconnect: %d", event_id);
+    ESP_LOGI(TAG, "on_wifi_disconnect: %d", (int) event_id);
     ESP_LOGI(TAG, "Wi-Fi disconnected, trying to reconnect...");
     esp_err_t err = esp_wifi_connect();
     if (err == ESP_ERR_WIFI_NOT_STARTED)
