@@ -45,7 +45,7 @@ static struct regval_list ov7670_default_regs[] = {
 	{CLKRC, 0x00},  
 	{DBLV,  0x4A},  
 
-    {COM10, COM10_VSYNC_NEG | COM10_PCLK_MASK},
+    {COM10, COM10_VSYNC_NEG | COM10_PCLK_FREE},
 
     /* Improve white balance */ 
 	{COM4, 0x40},  
@@ -173,7 +173,7 @@ int ret = 0;
  */
 static int ov7670_frame_control(sensor_t *sensor, int hstart, int hstop, int vstart, int vstop)
 {
-struct regval_list frame[7];
+    struct regval_list frame[7];
 
     frame[0].reg_num = HSTART;
     frame[0].value = (hstart >> 3);
@@ -194,8 +194,8 @@ struct regval_list frame[7];
     frame[5].value = (((vstop & 0x02) << 2) | (vstart & 0x02));
 
     /* End mark */
-    frame[5].reg_num = 0xFF;
-    frame[5].value = 0xFF;
+    frame[6].reg_num = 0xFF;
+    frame[6].value = 0xFF;
 
     return ov7670_write_array(sensor, frame);
 }
@@ -277,7 +277,7 @@ static int set_framesize(sensor_t *sensor, framesize_t framesize)
 	    case FRAMESIZE_QQVGA:
             if( (ret = ov7670_write_array(sensor, ov7670_qqvga)) == 0 ) {
                 /* These values from Omnivision */
-                ret = ov7670_frame_control(sensor, 158, 14, 10, 490);
+                ret = ov7670_frame_control(sensor, 158, 14, 12, 490);
             }
         break; 
 
