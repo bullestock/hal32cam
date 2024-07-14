@@ -22,12 +22,12 @@ extern void camera_task(void*);
 void initialize_sntp()
 {
     ESP_LOGI(TAG, "Initializing SNTP");
-    sntp_setoperatingmode(SNTP_OPMODE_POLL);
-    sntp_setservername(0, "pool.ntp.org");
+    esp_sntp_setoperatingmode(SNTP_OPMODE_POLL);
+    esp_sntp_setservername(0, "pool.ntp.org");
 #ifdef CONFIG_SNTP_TIME_SYNC_METHOD_SMOOTH
-    sntp_set_sync_mode(SNTP_SYNC_MODE_SMOOTH);
+    esp_sntp_set_sync_mode(SNTP_SYNC_MODE_SMOOTH);
 #endif
-    sntp_init();
+    esp_sntp_init();
 }
 
 void obtain_time()

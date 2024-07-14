@@ -9,9 +9,6 @@
 #include "esp_log.h"
 #include "esp_http_client.h"
 
-extern const char howsmyssl_com_root_cert_pem_start[] asm("_binary_howsmyssl_com_root_cert_pem_start");
-extern const char howsmyssl_com_root_cert_pem_end[]   asm("_binary_howsmyssl_com_root_cert_pem_end");
-
 void heartbeat(const struct tm& current,
                time_t last_pic)
 {
@@ -33,10 +30,10 @@ void heartbeat(const struct tm& current,
     esp_http_client_config_t config {
         .host = "acsgateway.hal9k.dk",
         .path = resource,
-        .cert_pem = howsmyssl_com_root_cert_pem_start,
         .event_handler = http_event_handler,
         .transport_type = HTTP_TRANSPORT_OVER_SSL,
-        .user_data = buffer
+        .user_data = buffer,
+        .crt_bundle_attach = esp_crt_bundle_attach,
     };
     esp_http_client_handle_t client = esp_http_client_init(&config);
 

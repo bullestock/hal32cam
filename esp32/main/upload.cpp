@@ -16,18 +16,6 @@
 #include "mbedtls/base64.h"
 #include "mbedtls/md.h"
 
-/* Root cert for howsmyssl.com, taken from howsmyssl_com_root_cert.pem
-
-   The PEM file was extracted from the output of this command:
-   openssl s_client -showcerts -connect www.howsmyssl.com:443 </dev/null
-
-   The CA root cert is the last cert given in the chain of certs.
-
-   To embed it in the app binary, the PEM file is named
-   in the component.mk COMPONENT_EMBED_TXTFILES variable.
-*/
-extern const char howsmyssl_com_root_cert_pem_start[] asm("_binary_howsmyssl_com_root_cert_pem_start");
-extern const char howsmyssl_com_root_cert_pem_end[]   asm("_binary_howsmyssl_com_root_cert_pem_end");
 
 void upload(const unsigned char* data, size_t size,
             const struct tm& current,
@@ -41,9 +29,9 @@ void upload(const unsigned char* data, size_t size,
     esp_http_client_config_t config {
         .host = "minio.hal9k.dk",
         .path = resource,
-        .cert_pem = howsmyssl_com_root_cert_pem_start,
         .event_handler = http_event_handler,
         .transport_type = HTTP_TRANSPORT_OVER_SSL,
+        .crt_bundle_attach = esp_crt_bundle_attach,
     };
     esp_http_client_handle_t client = esp_http_client_init(&config);
 
