@@ -8,7 +8,9 @@
 #include "esp_console.h"
 #include "esp_vfs_dev.h"
 
+#include <esp_vfs_dev.h>
 #include <driver/uart.h>
+#include <driver/uart_vfs.h>
 #include <nvs.h>
 #include <nvs_flash.h>
 
@@ -131,7 +133,7 @@ int set_gw_credentials(int argc, char** argv)
 
 struct
 {
-    struct arg_int* power;
+    struct arg_int* instance;
     struct arg_end* end;
 } set_instance_args;
 
@@ -143,7 +145,7 @@ static int set_instance(int argc, char** argv)
         arg_print_errors(stderr, set_instance_args.end, argv[0]);
         return 1;
     }
-    const auto inst_no = set_instance_args.power->ival[0];
+    const auto inst_no = set_instance_args.instance->ival[0];
     if (inst_no < 0 || inst_no > 255)
     {
         printf("ERROR: Invalid instance number\n");
@@ -171,9 +173,9 @@ void initialize_console()
     setvbuf(stdin, NULL, _IONBF, 0);
 
     /* Minicom, screen, idf_monitor send CR when ENTER key is pressed */
-    esp_vfs_dev_uart_port_set_rx_line_endings(0, ESP_LINE_ENDINGS_CR);
+    uart_vfs_dev_port_set_rx_line_endings(0, ESP_LINE_ENDINGS_CR);
     /* Move the caret to the beginning of the next line on '\n' */
-    esp_vfs_dev_uart_port_set_tx_line_endings(0, ESP_LINE_ENDINGS_CRLF);
+    uart_vfs_dev_port_set_tx_line_endings(0, ESP_LINE_ENDINGS_CRLF);
 
     /* Configure UART. Note that REF_TICK is used so that the baud rate remains
      * correct while APB frequency is changing in light sleep mode.
@@ -192,7 +194,7 @@ void initialize_console()
                                          256, 0, 0, NULL, 0));
 
     /* Tell VFS to use UART driver */
-    esp_vfs_dev_uart_use_driver(CONFIG_ESP_CONSOLE_UART_NUM);
+    uart_vfs_dev_use_driver(CONFIG_ESP_CONSOLE_UART_NUM);
 
     /* Initialize the console */
     esp_console_config_t console_config;
@@ -268,7 +270,7 @@ void run_console()
     };
     ESP_ERROR_CHECK(esp_console_cmd_register(&set_gw_credentials_cmd));
 
-    set_instance_args.power = arg_int1(NULL, NULL, "<instance>", "Instance number (0-255)");
+    set_instance_args.instance = arg_int1(NULL, NULL, "<instance>", "Instance number (0-255)");
     set_instance_args.end = arg_end(2);
     const esp_console_cmd_t set_instance_cmd = {
         .command = "set_instance",

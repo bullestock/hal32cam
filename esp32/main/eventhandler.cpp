@@ -20,6 +20,8 @@ esp_err_t http_event_handler(esp_http_client_event_t* evt)
     case HTTP_EVENT_ON_HEADER:
         ESP_LOGD(TAG, "HTTP_EVENT_ON_HEADER, key=%s, value=%s", evt->header_key, evt->header_value);
         break;
+    case HTTP_EVENT_ON_HEADERS_COMPLETE:
+        break;
     case HTTP_EVENT_ON_DATA:
         if (evt->user_data)
         {
@@ -30,6 +32,8 @@ esp_err_t http_event_handler(esp_http_client_event_t* evt)
         break;
     case HTTP_EVENT_ON_FINISH:
         ESP_LOGD(TAG, "HTTP_EVENT_ON_FINISH");
+        break;
+    case HTTP_EVENT_ON_STATUS_CODE:
         break;
     case HTTP_EVENT_REDIRECT:
         break;

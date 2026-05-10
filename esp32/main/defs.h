@@ -1,6 +1,7 @@
 #pragma once
 
 #include "esp_camera.h"
+#include "driver/gpio.h"
 
 constexpr const char* VERSION = "0.15";
 
