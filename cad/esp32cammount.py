@@ -10,7 +10,7 @@ from solid import *
 from solid.utils import *
 from utils import *
 
-SEGMENTS = 16#64
+SEGMENTS = 150
 
 eps = 0.01
 rr = 2

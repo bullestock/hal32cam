@@ -56,10 +56,10 @@ static void on_got_ip(void* arg, esp_event_base_t event_base,
     xSemaphoreGive(s_semph_get_ip_addrs);
 }
 
-esp_err_t connect(const std::vector<std::pair<std::string, std::string>>& creds)
+bool connect(const std::vector<std::pair<std::string, std::string>>& creds)
 {
     if (s_semph_get_ip_addrs != NULL)
-        return ESP_ERR_INVALID_STATE;
+        return false;
     s_semph_get_ip_addrs = xSemaphoreCreateCounting(1, 0);
     int index = 0;
     s_esp_netif = wifi_start(creds[index]);
@@ -71,7 +71,10 @@ esp_err_t connect(const std::vector<std::pair<std::string, std::string>>& creds)
         wifi_stop();
         ++index;
         if (index >= creds.size())
-            index = 0;
+        {
+            ESP_LOGI(TAG, "No more SSIDs");
+            return false;
+        }
         s_esp_netif = wifi_start(creds[index]);
     }
     ESP_LOGI(TAG, "Got IP(s)");
@@ -87,7 +90,7 @@ esp_err_t connect(const std::vector<std::pair<std::string, std::string>>& creds)
             ESP_LOGI(TAG, "- IPv4 address: " IPSTR, IP2STR(&ip.ip));
         }
     }
-    return ESP_OK;
+    return true;
 }
 
 esp_err_t disconnect()
@@ -163,8 +166,8 @@ esp_netif_t* get_netif_from_desc(const char* desc)
 static void wifi_stop()
 {
     esp_netif_t* wifi_netif = get_netif_from_desc("sta");
-    ESP_ERROR_CHECK(esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_STA_DISCONNECTED, &on_wifi_disconnect));
-    ESP_ERROR_CHECK(esp_event_handler_unregister(IP_EVENT, IP_EVENT_STA_GOT_IP, &on_got_ip));
+    esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_STA_DISCONNECTED, &on_wifi_disconnect);
+    esp_event_handler_unregister(IP_EVENT, IP_EVENT_STA_GOT_IP, &on_got_ip);
     esp_err_t err = esp_wifi_stop();
     if (err == ESP_ERR_WIFI_NOT_INIT)
         return;

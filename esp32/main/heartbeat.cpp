@@ -1,6 +1,7 @@
 #include "defs.h"
 #include "eventhandler.h"
 #include "heartbeat.h"
+#include "nvs.h"
 
 #include <string>
 
@@ -21,7 +22,7 @@ void heartbeat(const struct tm& current,
     }
     char resource[85];
     sprintf(resource, "/camera/%d?active=%d&continuous=%d&version=%s%s",
-            (int) config_instance_number,
+            (int) get_instance(),
             (int) config_active,
             (int) config_continuous,
             VERSION,
@@ -40,7 +41,7 @@ void heartbeat(const struct tm& current,
     esp_http_client_set_method(client, HTTP_METHOD_GET);
 
     char bearer[80];
-    snprintf(bearer, sizeof(bearer), "Bearer %s", config_gateway_token);
+    snprintf(bearer, sizeof(bearer), "Bearer %s", get_gateway_token().c_str());
     esp_http_client_set_header(client, "Authentication", bearer);
     const char* content_type = "application/json";
     esp_http_client_set_header(client, "Content-Type", content_type);
@@ -115,3 +116,7 @@ void heartbeat(const struct tm& current,
     
     esp_http_client_cleanup(client);
 }
+
+// Local Variables:
+// compile-command: "(cd ..; idf.py build)"
+// End:

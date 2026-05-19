@@ -66,13 +66,14 @@ static camera_config_t camera_config = {
 
 static esp_err_t init_camera()
 {
-    //initialize the camera
     esp_err_t err = esp_camera_init(&camera_config);
     if (err != ESP_OK)
     {
-        ESP_LOGE(TAG, "Camera Init Failed");
+        ESP_LOGE(TAG, "Camera init failed");
         return err;
     }
+    ESP_LOGI(TAG, "Camera init complete");
+    vTaskDelay(100 / portTICK_PERIOD_MS);
 
     return ESP_OK;
 }

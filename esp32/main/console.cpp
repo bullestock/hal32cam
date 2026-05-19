@@ -39,21 +39,20 @@ int add_wifi_credentials(int argc, char** argv)
         printf("ERROR: Invalid SSID value\n");
         return 1;
     }
-    nvs_handle my_handle;
-    ESP_ERROR_CHECK(nvs_open("storage", NVS_READWRITE, &my_handle));
-    std::string creds;
-    char buf[256];
-    auto size = sizeof(buf);
-    if (nvs_get_str(my_handle, WIFI_KEY, buf, &size) == ESP_OK)
-    {
-        creds = std::string(buf);
-        if (!creds.empty())
-            creds += std::string(":");
-    }
-    creds += std::string(ssid) + std::string(":") + std::string(password);
-    ESP_ERROR_CHECK(nvs_set_str(my_handle, WIFI_KEY, creds.c_str()));
-    nvs_close(my_handle);
+    add_wifi_credentials(ssid, password);
     printf("OK: Added WiFi credentials %s/%s\n", ssid, password);
+    return 0;
+}
+
+int list_wifi_creds(int argc, char** argv)
+{
+    const auto creds = get_wifi_creds();
+    for (const auto& c : creds)
+    {
+        printf("%-20s %s\n", c.first.c_str(),
+               c.second.empty() ? "" : "***");
+    }
+    printf("OK: Listed %d WiFi credentials\n", static_cast<int>(creds.size()));
     return 0;
 }
 
@@ -94,11 +93,8 @@ int set_s3_credentials(int argc, char** argv)
         printf("ERROR: Invalid secret key\n");
         return 1;
     }
-    nvs_handle my_handle;
-    ESP_ERROR_CHECK(nvs_open("storage", NVS_READWRITE, &my_handle));
-    ESP_ERROR_CHECK(nvs_set_str(my_handle, S3_ACCESS_KEY, access_key));
-    ESP_ERROR_CHECK(nvs_set_str(my_handle, S3_SECRET_KEY, secret_key));
-    nvs_close(my_handle);
+    set_s3_access_key(access_key);
+    set_s3_secret_key(secret_key);
     printf("OK: S3 credentials set to %s/%s\n", access_key, secret_key);
     return 0;
 }
@@ -123,10 +119,7 @@ int set_gw_credentials(int argc, char** argv)
         printf("ERROR: Invalid token\n");
         return 1;
     }
-    nvs_handle my_handle;
-    ESP_ERROR_CHECK(nvs_open("storage", NVS_READWRITE, &my_handle));
-    ESP_ERROR_CHECK(nvs_set_str(my_handle, GATEWAY_TOKEN_KEY, token));
-    nvs_close(my_handle);
+    set_gateway_token(token);
     printf("OK: Gateway token set to %s\n", token);
     return 0;
 }
@@ -151,12 +144,8 @@ static int set_instance(int argc, char** argv)
         printf("ERROR: Invalid instance number\n");
         return 1;
     }
-    config_instance_number = (int8_t) inst_no;
-    nvs_handle my_handle;
-    ESP_ERROR_CHECK(nvs_open("storage", NVS_READWRITE, &my_handle));
-    ESP_ERROR_CHECK(nvs_set_i8(my_handle, INSTANCE_KEY, config_instance_number));
-    nvs_close(my_handle);
-    printf("OK: Instance number set to %d\n", (int) config_instance_number);
+    set_instance(inst_no);
+    printf("OK: Instance number set to %d\n", inst_no);
     return 0;
 }
 
@@ -169,17 +158,11 @@ int reboot(int, char**)
 
 void initialize_console()
 {
-    /* Disable buffering on stdin */
     setvbuf(stdin, NULL, _IONBF, 0);
 
-    /* Minicom, screen, idf_monitor send CR when ENTER key is pressed */
     uart_vfs_dev_port_set_rx_line_endings(0, ESP_LINE_ENDINGS_CR);
-    /* Move the caret to the beginning of the next line on '\n' */
     uart_vfs_dev_port_set_tx_line_endings(0, ESP_LINE_ENDINGS_CRLF);
 
-    /* Configure UART. Note that REF_TICK is used so that the baud rate remains
-     * correct while APB frequency is changing in light sleep mode.
-     */
     uart_config_t uart_config;
     memset(&uart_config, 0, sizeof(uart_config));
     uart_config.baud_rate = CONFIG_ESP_CONSOLE_UART_BAUDRATE;
@@ -189,14 +172,11 @@ void initialize_console()
     uart_config.source_clk = UART_SCLK_REF_TICK;
     ESP_ERROR_CHECK(uart_param_config((uart_port_t) CONFIG_ESP_CONSOLE_UART_NUM, &uart_config));
 
-    /* Install UART driver for interrupt-driven reads and writes */
     ESP_ERROR_CHECK(uart_driver_install((uart_port_t) CONFIG_ESP_CONSOLE_UART_NUM,
                                          256, 0, 0, NULL, 0));
 
-    /* Tell VFS to use UART driver */
     uart_vfs_dev_use_driver(CONFIG_ESP_CONSOLE_UART_NUM);
 
-    /* Initialize the console */
     esp_console_config_t console_config;
     memset(&console_config, 0, sizeof(console_config));
     console_config.max_cmdline_args = 8;
@@ -206,17 +186,9 @@ void initialize_console()
 #endif
     ESP_ERROR_CHECK(esp_console_init(&console_config));
 
-    /* Configure linenoise line completion library */
-    /* Enable multiline editing. If not set, long commands will scroll within
-     * single line.
-     */
     linenoiseSetMultiLine(1);
-
-    /* Tell linenoise where to get command completions and hints */
     linenoiseSetCompletionCallback(&esp_console_get_completion);
     linenoiseSetHintsCallback((linenoiseHintsCallback*) &esp_console_get_hint);
-
-    /* Set command history size */
     linenoiseHistorySetMaxLen(100);
 }
 
@@ -237,6 +209,15 @@ void run_console()
         .argtable = &add_wifi_credentials_args
     };
     ESP_ERROR_CHECK(esp_console_cmd_register(&add_wifi_credentials_cmd));
+
+    const esp_console_cmd_t list_wifi_credentials_cmd = {
+        .command = "list_wifi",
+        .help = "List WiFi credentials",
+        .hint = nullptr,
+        .func = &list_wifi_creds,
+        .argtable = nullptr,
+    };
+    ESP_ERROR_CHECK(esp_console_cmd_register(&list_wifi_credentials_cmd));
 
     const esp_console_cmd_t clear_wifi_credentials_cmd = {
         .command = "clearwifi",

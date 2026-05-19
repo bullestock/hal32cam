@@ -1,7 +1,12 @@
 #pragma once
 
+#include <string>
+#include <vector>
+
 #include "esp_camera.h"
 #include "driver/gpio.h"
+
+using wifi_creds_t = std::vector<std::pair<std::string, std::string>>;
 
 constexpr const char* VERSION = "0.16";
 
@@ -15,10 +20,6 @@ constexpr const int DEFAULT_KEEPALIVE_SECS = 60;
 
 constexpr const auto LED_PIN = (gpio_num_t) 12;
 
-extern char config_s3_access_key[];
-extern char config_s3_secret_key[];
-extern char config_gateway_token[];
-extern int8_t config_instance_number;
 extern int config_keepalive_secs;
 extern int config_pixel_threshold;
 extern int config_percent_threshold;
