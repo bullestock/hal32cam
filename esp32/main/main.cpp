@@ -44,14 +44,13 @@ void obtain_time()
     }
 }
 
-// Reboots if key not found
-void get_nvs_string(nvs_handle my_handle, const char* key, char* buf, size_t buf_size)
+bool get_nvs_string(nvs_handle my_handle, const char* key, char* buf, size_t buf_size)
 {
     auto err = nvs_get_str(my_handle, key, buf, &buf_size);
     switch (err)
     {
     case ESP_OK:
-        return;
+        return true;
     case ESP_ERR_NVS_NOT_FOUND:
         printf("%s: not found\n", key);
         break;
@@ -59,14 +58,9 @@ void get_nvs_string(nvs_handle my_handle, const char* key, char* buf, size_t buf
         printf("%s: NVS error %d\n", key, err);
         break;
     }
-    printf("Restart in 10 seconds\n");
-    vTaskDelay(5000 / portTICK_PERIOD_MS);
-    printf("Restart in 5 seconds\n");
-    vTaskDelay(5000 / portTICK_PERIOD_MS);
-    esp_restart();
+    return false;
 }
 
-// Reboots if key not found
 void get_nvs_i8(nvs_handle my_handle, const char* key, int8_t& value)
 {
     auto err = nvs_get_i8(my_handle, key, &value);
@@ -81,9 +75,6 @@ void get_nvs_i8(nvs_handle my_handle, const char* key, int8_t& value)
         printf("%s: NVS error %d\n", key, err);
         break;
     }
-    printf("Restart in 10 seconds\n");
-    vTaskDelay(10000 / portTICK_PERIOD_MS);
-    esp_restart();
 }
 
 char config_s3_access_key[40];
@@ -155,8 +146,9 @@ void app_main()
     nvs_handle my_handle;
     ESP_ERROR_CHECK(nvs_open("storage", NVS_READWRITE, &my_handle));
     char buf[256];
-    get_nvs_string(my_handle, WIFI_KEY, buf, sizeof(buf));
-    const auto creds = get_wifi_credentials(buf);
+    bool debug = false;
+    if (!get_nvs_string(my_handle, WIFI_KEY, buf, sizeof(buf)))
+        debug = true;
     get_nvs_string(my_handle, S3_ACCESS_KEY, config_s3_access_key, sizeof(config_s3_access_key));
     get_nvs_string(my_handle, S3_SECRET_KEY, config_s3_secret_key, sizeof(config_s3_secret_key));
     get_nvs_string(my_handle, GATEWAY_TOKEN_KEY, config_gateway_token, sizeof(config_gateway_token));
@@ -166,7 +158,6 @@ void app_main()
     printf("HAL32CAM v %s instance %d\n", VERSION,
            (int) config_instance_number);
     printf("Press a key to enter console\n");
-    bool debug = false;
     for (int i = 0; i < 20; ++i)
     {
         if (getchar() != EOF)
@@ -183,6 +174,7 @@ void app_main()
     flash_led(2);
 
     // Connect to WiFi
+    const auto creds = get_wifi_credentials(buf);
     ESP_ERROR_CHECK(connect(creds));
     ESP_LOGI(TAG, "Connected to WiFi. Instance #%d", (int) config_instance_number);
     ESP_ERROR_CHECK(esp_wifi_set_ps(WIFI_PS_NONE));
