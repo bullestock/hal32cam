@@ -3,7 +3,7 @@
 #include "esp_camera.h"
 #include "driver/gpio.h"
 
-constexpr const char* VERSION = "0.15";
+constexpr const char* VERSION = "0.16";
 
 constexpr const char* WIFI_KEY = "wifi";
 constexpr const char* S3_ACCESS_KEY = "s3a";
