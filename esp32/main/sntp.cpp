@@ -18,11 +18,16 @@ void initialize_sntp()
     // wait for time to be set
     int retry = 0;
     const int retry_count = 10;
-    while (sntp_get_sync_status() == SNTP_SYNC_STATUS_RESET && ++retry < retry_count)
+    auto status = sntp_get_sync_status();
+    while (status == SNTP_SYNC_STATUS_RESET && ++retry < retry_count)
     {
         ESP_LOGI(TAG, "Waiting for system time to be set... (%d/%d)", retry, retry_count);
         vTaskDelay(2000 / portTICK_PERIOD_MS);
+        status = sntp_get_sync_status();
     }
-    ESP_LOGI(TAG, "SNTP synch complete");
+    if (status == SNTP_SYNC_STATUS_RESET)
+        ESP_LOGW(TAG, "SNTP sync timed out - TLS may fail!");
+    else
+        ESP_LOGI(TAG, "SNTP synch complete");
     vTaskDelay(200 / portTICK_PERIOD_MS);
 }
