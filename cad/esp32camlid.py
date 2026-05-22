@@ -25,7 +25,7 @@ f = 8.5
 g = 12
 # Height of square part of camera
 h = 1.7
-j = 8.5
+j = 9
 k = 5
 m = 2.5
 # camhole offset
@@ -38,7 +38,7 @@ def ridge():
 
 def assembly():
     base = roundxycube(d, b, h + e + m, rr)
-    rim = roundxycube(c + 2*wth, a + 2*wth, k, rr) - down(0.5)(ccube(c, a, k+1))
+    rim = roundxycube(c + 2*wth + 0.25, a + 2*wth + 0.25, k, rr) - down(0.5)(ccube(c, a, k+1))
     camhole = cylinder(d = f, h = 10)
     camcone = cylinder(d1 = g, d2 = f, h = e)
     cambox = ccube(j, j, m + 1)
