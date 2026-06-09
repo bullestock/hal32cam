@@ -1,6 +1,7 @@
 #include "connect.h"
 #include "console.h"
 #include "defs.h"
+#include "mqtt.h"
 #include "nvs.h"
 #include "sntp.h"
 
@@ -12,6 +13,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp32/rom/ets_sys.h"
+#include "esp_app_desc.h"
 #include "esp_event.h"
 #include "esp_log.h"
 #include "esp_sntp.h"
@@ -19,6 +21,8 @@
 #include "esp_wifi.h"
 
 extern void camera_task(void*);
+
+static constexpr const char* TAG = "main";
 
 int config_keepalive_secs = DEFAULT_KEEPALIVE_SECS;
 int config_pixel_threshold = DEFAULT_PIXEL_THRESHOLD;
@@ -60,7 +64,7 @@ void app_main()
     if (get_wifi_creds().empty())
         debug = true;
 
-    printf("HAL32CAM v %s instance %d\n", VERSION,
+    printf("HAL32CAM v %s instance %d\n", esp_app_get_description()->version,
            (int) get_instance());
     printf("Press a key to enter console\n");
     for (int i = 0; i < 20; ++i)
@@ -90,6 +94,7 @@ void app_main()
         initialize_sntp();
     }
     xTaskCreate(&camera_task, "camera_task", 32768, nullptr, 5, nullptr);
+    Mqtt::instance().start(get_mqtt_address());
 }
 
 // Local Variables:

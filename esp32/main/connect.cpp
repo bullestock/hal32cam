@@ -25,6 +25,8 @@
 #include "lwip/err.h"
 #include "lwip/sys.h"
 
+static constexpr const char* TAG = "connect";
+
 static SemaphoreHandle_t s_semph_get_ip_addrs;
 static esp_netif_t* s_esp_netif = NULL;
 
@@ -182,3 +184,7 @@ esp_netif_t* get_netif()
 {
     return s_esp_netif;
 }
+
+// Local Variables:
+// compile-command: "(cd ..; idf.py build)"
+// End:

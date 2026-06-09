@@ -1,6 +1,6 @@
 #include "defs.h"
-#include "heartbeat.h"
 #include "motion.h"
+#include "mqtt.h"
 #include "upload.h"
 
 #include <esp_log.h>
@@ -11,6 +11,8 @@
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+
+static constexpr const char* TAG = "cam";
 
 // ESP32Cam (AiThinker) PIN Map
 #define CAM_PIN_PWDN 32
@@ -106,7 +108,7 @@ void camera_task(void*)
 
         if (current - last_heartbeat > config_keepalive_secs)
         {
-            heartbeat(timeinfo, last_pic);
+            Mqtt::instance().set_status(last_pic);
             last_heartbeat = current;
         }
 
@@ -137,3 +139,7 @@ void camera_task(void*)
         }
     }
 }
+
+// Local Variables:
+// compile-command: "(cd ..; idf.py build)"
+// End:

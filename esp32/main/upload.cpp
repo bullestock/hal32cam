@@ -17,6 +17,7 @@
 #include "mbedtls/base64.h"
 #include "mbedtls/md.h"
 
+static constexpr const char* TAG = "upload";
 
 void upload(const unsigned char* data, size_t size,
             const struct tm& current,

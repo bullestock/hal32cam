@@ -101,31 +101,6 @@ int set_s3_credentials(int argc, char** argv)
 
 struct
 {
-    struct arg_str* token;
-    struct arg_end* end;
-} set_gw_credentials_args;
-
-int set_gw_credentials(int argc, char** argv)
-{
-    int nerrors = arg_parse(argc, argv, (void**) &set_gw_credentials_args);
-    if (nerrors != 0)
-    {
-        arg_print_errors(stderr, set_gw_credentials_args.end, argv[0]);
-        return 1;
-    }
-    const auto token = set_gw_credentials_args.token->sval[0];
-    if (strlen(token) < 32)
-    {
-        printf("ERROR: Invalid token\n");
-        return 1;
-    }
-    set_gateway_token(token);
-    printf("OK: Gateway token set to %s\n", token);
-    return 0;
-}
-
-struct
-{
     struct arg_int* instance;
     struct arg_end* end;
 } set_instance_args;
@@ -146,6 +121,26 @@ static int set_instance(int argc, char** argv)
     }
     set_instance(inst_no);
     printf("OK: Instance number set to %d\n", inst_no);
+    return 0;
+}
+
+struct
+{
+    struct arg_str* address;
+    struct arg_end* end;
+} set_mqtt_params_args;
+
+int set_mqtt_params(int argc, char** argv)
+{
+    int nerrors = arg_parse(argc, argv, (void**) &set_mqtt_params_args);
+    if (nerrors != 0)
+    {
+        arg_print_errors(stderr, set_mqtt_params_args.end, argv[0]);
+        return 1;
+    }
+    const auto address = set_mqtt_params_args.address->sval[0];
+    set_mqtt_address(address);
+    printf("OK: MQTT address set to %s\n", address);
     return 0;
 }
 
@@ -240,17 +235,6 @@ void run_console()
     };
     ESP_ERROR_CHECK(esp_console_cmd_register(&set_s3_credentials_cmd));
 
-    set_gw_credentials_args.token = arg_str1(NULL, NULL, "<token>", "Gateway token");
-    set_gw_credentials_args.end = arg_end(2);
-    const esp_console_cmd_t set_gw_credentials_cmd = {
-        .command = "gw",
-        .help = "Set gateway credentials",
-        .hint = nullptr,
-        .func = &set_gw_credentials,
-        .argtable = &set_gw_credentials_args
-    };
-    ESP_ERROR_CHECK(esp_console_cmd_register(&set_gw_credentials_cmd));
-
     set_instance_args.instance = arg_int1(NULL, NULL, "<instance>", "Instance number (0-255)");
     set_instance_args.end = arg_end(2);
     const esp_console_cmd_t set_instance_cmd = {
@@ -261,6 +245,17 @@ void run_console()
         .argtable = &set_instance_args
     };
     ESP_ERROR_CHECK(esp_console_cmd_register(&set_instance_cmd));
+
+    set_mqtt_params_args.address = arg_str1(NULL, NULL, "<address>", "MQTT address");
+    set_mqtt_params_args.end = arg_end(2);
+    const esp_console_cmd_t set_mqtt_params_cmd = {
+        .command = "mqtt",
+        .help = "Set MQTT host",
+        .hint = nullptr,
+        .func = &set_mqtt_params,
+        .argtable = &set_mqtt_params_args
+    };
+    ESP_ERROR_CHECK(esp_console_cmd_register(&set_mqtt_params_cmd));
 
     const esp_console_cmd_t reboot_cmd = {
         .command = "reboot",

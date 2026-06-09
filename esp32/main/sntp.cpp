@@ -5,6 +5,8 @@
 #include "esp_log.h"
 #include "esp_sntp.h"
 
+static constexpr const char* TAG = "sntp";
+
 void initialize_sntp()
 {
     ESP_LOGI(TAG, "Initializing SNTP");
@@ -31,3 +33,7 @@ void initialize_sntp()
         ESP_LOGI(TAG, "SNTP synch complete");
     vTaskDelay(200 / portTICK_PERIOD_MS);
 }
+
+// Local Variables:
+// compile-command: "(cd ..; idf.py build)"
+// End:

@@ -10,6 +10,8 @@
 #include "esp_log.h"
 #include "esp_system.h"
 
+static constexpr const char* TAG = "motion";
+
 constexpr const int FACTOR = 8;
 constexpr const int BUFSIZE_X = FRAMESIZE_X/FACTOR;
 constexpr const int BUFSIZE_Y = FRAMESIZE_Y/FACTOR;
@@ -89,3 +91,7 @@ bool motion_detect(const camera_fb_t* fb, const struct tm& cur_tm)
 
     return true;
 }
+
+// Local Variables:
+// compile-command: "(cd ..; idf.py build)"
+// End:

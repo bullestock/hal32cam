@@ -4,6 +4,8 @@
 #include "esp_log.h"
 #include "esp_tls.h"
 
+static constexpr const char* TAG = "http";
+
 esp_err_t http_event_handler(esp_http_client_event_t* evt)
 {
     switch(evt->event_id)
@@ -50,3 +52,7 @@ esp_err_t http_event_handler(esp_http_client_event_t* evt)
     return ESP_OK;
 }
 
+
+// Local Variables:
+// compile-command: "(cd ..; idf.py build)"
+// End:

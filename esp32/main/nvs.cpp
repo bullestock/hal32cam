@@ -11,10 +11,10 @@
 #include <nvs_flash.h>
 
 static int8_t instance = 0;
-static char gateway_token[80];
 static wifi_creds_t wifi_creds;
 static char s3_access_key[40];
 static char s3_secret_key[40];
+static char mqtt_address[80];
 
 void clear_wifi_credentials()
 {
@@ -67,12 +67,11 @@ void set_s3_secret_key(const char* key)
     nvs_close(my_handle);
 }
 
-void set_gateway_token(const char* token)
+void set_mqtt_address(const char* address)
 {
     nvs_handle my_handle;
     ESP_ERROR_CHECK(nvs_open("storage", NVS_READWRITE, &my_handle));
-    ESP_ERROR_CHECK(nvs_set_str(my_handle, GATEWAY_TOKEN_KEY, token));
-    ESP_ERROR_CHECK(nvs_commit(my_handle));
+    ESP_ERROR_CHECK(nvs_set_str(my_handle, MQTT_ADDRESS_KEY, address));
     nvs_close(my_handle);
 }
 
@@ -113,11 +112,6 @@ std::vector<std::pair<std::string, std::string>> parse_wifi_credentials(char* bu
     return v;
 }
 
-std::string get_gateway_token()
-{
-    return gateway_token;
-}
-
 int get_instance()
 {
     return instance;
@@ -138,6 +132,11 @@ std::string get_s3_secret_key()
     return s3_secret_key;
 }
 
+std::string get_mqtt_address()
+{
+    return mqtt_address;
+}
+
 void init_nvs()
 {
     esp_err_t ret = nvs_flash_init();
@@ -155,12 +154,12 @@ void init_nvs()
         instance = 0;
     if (get_nvs_string(my_handle, WIFI_KEY, buf, sizeof(buf)))
         wifi_creds = parse_wifi_credentials(buf);
-    if (!get_nvs_string(my_handle, GATEWAY_TOKEN_KEY, gateway_token, sizeof(gateway_token)))
-        gateway_token[0] = 0;
     if (!get_nvs_string(my_handle, S3_ACCESS_KEY, s3_access_key, sizeof(s3_access_key)))
         s3_access_key[0] = 0;
     if (!get_nvs_string(my_handle, S3_SECRET_KEY, s3_secret_key, sizeof(s3_secret_key)))
         s3_secret_key[0] = 0;
+    if (!get_nvs_string(my_handle, MQTT_ADDRESS_KEY, mqtt_address, sizeof(mqtt_address)))
+        strcpy(mqtt_address, "imqtt.hal9k.dk");
     nvs_close(my_handle);
 }
 
