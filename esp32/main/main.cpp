@@ -3,6 +3,7 @@
 #include "defs.h"
 #include "mqtt.h"
 #include "nvs.h"
+#include "otafwu.h"
 #include "sntp.h"
 
 #include <string.h>
@@ -54,6 +55,12 @@ void app_main()
     io_conf.pull_up_en = GPIO_PULLUP_DISABLE;
     ESP_ERROR_CHECK(gpio_config(&io_conf));
 
+    io_conf.mode = GPIO_MODE_INPUT;
+    io_conf.pin_bit_mask = (1ULL << EXT1_PIN);
+    io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
+    io_conf.pull_up_en = GPIO_PULLUP_ENABLE;
+    ESP_ERROR_CHECK(gpio_config(&io_conf));
+    
     flash_led(1);
 
     init_nvs();
@@ -92,6 +99,12 @@ void app_main()
         flash_led(3);
 
         initialize_sntp();
+        bool do_ota_check = gpio_get_level(EXT1_PIN);
+        if (!do_ota_check)
+            ESP_LOGI(TAG, "OTA disabled");
+        else
+            if (!check_ota_update())
+                ESP_LOGE(TAG, "OTA failed!");
     }
     xTaskCreate(&camera_task, "camera_task", 32768, nullptr, 5, nullptr);
     Mqtt::instance().start(get_mqtt_address());

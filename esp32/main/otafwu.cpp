@@ -1,0 +1,221 @@
+#include "http.h"
+
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "esp_system.h"
+#include "esp_event.h"
+#include "esp_log.h"
+#include "esp_ota_ops.h"
+#include "esp_app_format.h"
+#include "esp_http_client.h"
+#include "esp_flash_partitions.h"
+#include "esp_partition.h"
+#include "nvs.h"
+#include "nvs_flash.h"
+#include "errno.h"
+
+static constexpr const char* TAG = "ota";
+
+static const constexpr int HASH_LEN = 32; // SHA-256 digest length
+static const constexpr int BUFFSIZE = 1024;
+
+bool check_ota_update()
+{
+    const esp_partition_t* running = esp_ota_get_running_partition();
+    esp_ota_img_states_t ota_state;
+    if (esp_ota_get_state_partition(running, &ota_state) == ESP_OK)
+        if (ota_state == ESP_OTA_IMG_PENDING_VERIFY)
+        {
+            if (true)
+            {
+                esp_ota_mark_app_valid_cancel_rollback();
+            }
+            else
+            {
+                esp_ota_mark_app_invalid_rollback_and_reboot();
+            }
+        }
+
+    const esp_partition_t* configured = esp_ota_get_boot_partition();
+    running = esp_ota_get_running_partition();
+
+    if (configured != running)
+    {
+        ESP_LOGW(TAG, "Configured OTA boot partition at offset 0x%08" PRIx32 ", but running from offset 0x%08" PRIx32,
+                 configured->address, running->address);
+        //ESP_LOGW(TAG, "(This can happen if either the OTA boot data or preferred boot image become corrupted somehow.)");
+    }
+    //ESP_LOGI(TAG, "Running partition type %d subtype %d (offset 0x%08" PRIx32 ")",
+    //running->type, running->subtype, running->address);
+
+    char path[40];
+    strcpy(path, "/firmware/frontend");
+    esp_http_client_config_t config = {
+        .host = "acsgateway.hal9k.dk",
+        .path = path,
+        .timeout_ms = 3000,
+        .event_handler = http_event_handler,
+        .transport_type = HTTP_TRANSPORT_OVER_SSL,
+        .crt_bundle_attach = esp_crt_bundle_attach,
+        .keep_alive_enable = true,
+    };
+
+    esp_http_client_handle_t client = esp_http_client_init(&config);
+    if (!client)
+    {
+        ESP_LOGE(TAG, "Failed to initialise HTTP connection");
+        return false;
+    }
+    Http_client_wrapper w(client);
+    esp_err_t err = esp_http_client_open(client, 0);
+    if (err != ESP_OK)
+    {
+        ESP_LOGE(TAG, "Failed to open HTTP connection: %s", esp_err_to_name(err));
+        return false;
+    }
+    esp_http_client_fetch_headers(client);
+    const int status_code = esp_http_client_get_status_code(client);
+    if (status_code != 200)
+    {
+        ESP_LOGE(TAG, "OTA HTTP error: %d", status_code);
+        return false;
+    }
+
+    const esp_partition_t* update_partition = esp_ota_get_next_update_partition(NULL);
+    assert(update_partition != NULL);
+    //ESP_LOGI(TAG, "Writing to partition subtype %d at offset 0x%" PRIx32,
+    //update_partition->subtype, update_partition->address);
+
+    int binary_file_length = 0;
+    bool image_header_was_checked = false;
+    // update handle : set by esp_ota_begin(), must be freed via esp_ota_end()
+    esp_ota_handle_t update_handle = 0;
+    ESP_LOGI(TAG, "Downloading");
+    while (1)
+    {
+        char ota_write_data[BUFFSIZE + 1] = { 0 };
+        int data_read = esp_http_client_read(client, ota_write_data, BUFFSIZE);
+        if (data_read < 0)
+        {
+            ESP_LOGE(TAG, "Error: SSL data read error");
+            return false;
+        }
+        if (data_read > 0)
+        {
+            if (!image_header_was_checked)
+            {
+                if (data_read > sizeof(esp_image_header_t) + sizeof(esp_image_segment_header_t)
+                    + sizeof(esp_app_desc_t))
+                {
+                    // check current version with downloading
+                    esp_app_desc_t new_app_info;
+                    memcpy(&new_app_info,
+                           &ota_write_data[sizeof(esp_image_header_t)
+                                           + sizeof(esp_image_segment_header_t)],
+                           sizeof(esp_app_desc_t));
+                    ESP_LOGI(TAG, "New firmware version: %s", new_app_info.version);
+
+                    esp_app_desc_t running_app_info;
+                    if (esp_ota_get_partition_description(running, &running_app_info) == ESP_OK)
+                        ESP_LOGI(TAG, "Running firmware version: %s", running_app_info.version);
+
+                    const esp_partition_t* last_invalid_app = esp_ota_get_last_invalid_partition();
+                    esp_app_desc_t invalid_app_info;
+                    if (esp_ota_get_partition_description(last_invalid_app, &invalid_app_info) == ESP_OK)
+                        ESP_LOGI(TAG, "Last invalid firmware version: %s", invalid_app_info.version);
+
+                    // check current version with last invalid partition
+                    if (last_invalid_app)
+                    {
+                        if (memcmp(invalid_app_info.version, new_app_info.version, sizeof(new_app_info.version)) == 0)
+                        {
+                            ESP_LOGW(TAG, "New version == invalid version");
+                            ESP_LOGW(TAG, "Previous attempt to launch %s failed",
+                                     invalid_app_info.version);
+                            ESP_LOGW(TAG, "Rolled back");
+                            ESP_LOGI(TAG, "Rolled back");
+                            return true;
+                        }
+                    }
+                    if (memcmp(new_app_info.version, running_app_info.version, sizeof(new_app_info.version)) == 0)
+                    {
+                        ESP_LOGW(TAG, "Running == new. No update");
+                        ESP_LOGI(TAG, "No new version");
+                        return true;
+                    }
+
+                    image_header_was_checked = true;
+
+                    err = esp_ota_begin(update_partition, OTA_WITH_SEQUENTIAL_WRITES, &update_handle);
+                    if (err != ESP_OK)
+                    {
+                        ESP_LOGE(TAG, "esp_ota_begin failed (%s)", esp_err_to_name(err));
+                        esp_ota_abort(update_handle);
+                        return false;
+                    }
+                    //ESP_LOGI(TAG, "esp_ota_begin succeeded");
+                }
+                else
+                {
+                    ESP_LOGE(TAG, "received package too small");
+                    esp_ota_abort(update_handle);
+                    return false;
+                }
+            }
+            err = esp_ota_write(update_handle, (const void*) ota_write_data, data_read);
+            if (err != ESP_OK)
+            {
+                esp_ota_abort(update_handle);
+                return false;
+            }
+            binary_file_length += data_read;
+            //ESP_LOGD(TAG, "Written image length %d", binary_file_length);
+        }
+        else if (data_read == 0)
+        {
+            // As esp_http_client_read never returns negative error code, we rely on
+            // `errno` to check for underlying transport connectivity closure if any
+            if (errno == ECONNRESET || errno == ENOTCONN)
+            {
+                //ESP_LOGE(TAG, "Connection closed, errno = %d", errno);
+                break;
+            }
+            if (esp_http_client_is_complete_data_received(client))
+            {
+                //ESP_LOGI(TAG, "Connection closed");
+                break;
+            }
+        }
+    }
+    //ESP_LOGI(TAG, "Total Write binary data length: %d", binary_file_length);
+    if (!esp_http_client_is_complete_data_received(client))
+    {
+        ESP_LOGE(TAG, "Error in receiving complete file");
+        esp_ota_abort(update_handle);
+        return false;
+    }
+
+    err = esp_ota_end(update_handle);
+    if (err != ESP_OK)
+    {
+        if (err == ESP_ERR_OTA_VALIDATE_FAILED)
+            ESP_LOGE(TAG, "Image validation failed");
+        else 
+            ESP_LOGE(TAG, "esp_ota_end failed (%s)!", esp_err_to_name(err));
+        return false;
+    }
+
+    err = esp_ota_set_boot_partition(update_partition);
+    if (err != ESP_OK)
+    {
+        ESP_LOGE(TAG, "esp_ota_set_boot_partition failed (%s)!", esp_err_to_name(err));
+        return false;
+    }
+    ESP_LOGI(TAG, "Rebooting");
+    esp_restart();
+    return true;
+}
+
+// Local Variables:
+// compile-command: "(cd ..; idf.py build)"
+// End:

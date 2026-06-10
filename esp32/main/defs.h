@@ -17,6 +17,7 @@ constexpr const char* MQTT_ADDRESS_KEY = "mqa";
 constexpr const int DEFAULT_KEEPALIVE_SECS = 60;
 
 constexpr const auto LED_PIN = (gpio_num_t) 12;
+constexpr const auto EXT1_PIN = (gpio_num_t) 13;
 
 extern int config_keepalive_secs;
 extern int config_pixel_threshold;
