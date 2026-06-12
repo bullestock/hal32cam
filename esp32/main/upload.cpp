@@ -1,5 +1,7 @@
 #include "defs.h"
+#include "format.h"
 #include "http.h"
+#include "mqtt.h"
 #include "nvs.h"
 #include "upload.h"
 
@@ -64,9 +66,9 @@ void upload(const unsigned char* data, size_t size,
 
     if (err == ESP_OK)
     {
-        ESP_LOGI(TAG, "Uploaded %s, HTTPS Status = %d",
-                 resource,
-                 esp_http_client_get_status_code(client));
+        Mqtt::instance().log(format("Uploaded %s, HTTPS Status = %d",
+                                    resource,
+                                    esp_http_client_get_status_code(client)));
     }
     else
         ESP_LOGE(TAG, "Error performing http request %s", esp_err_to_name(err));

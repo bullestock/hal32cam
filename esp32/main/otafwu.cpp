@@ -49,7 +49,7 @@ bool check_ota_update()
     //running->type, running->subtype, running->address);
 
     char path[40];
-    strcpy(path, "/firmware/frontend");
+    strcpy(path, "/firmware/camera");
     esp_http_client_config_t config = {
         .host = "acsgateway.hal9k.dk",
         .path = path,
