@@ -66,9 +66,11 @@ void upload(const unsigned char* data, size_t size,
 
     if (err == ESP_OK)
     {
-        Mqtt::instance().log(format("Uploaded %s, HTTPS Status = %d",
-                                    resource,
-                                    esp_http_client_get_status_code(client)));
+        const auto msg = format("Uploaded %s, HTTPS Status = %d",
+                                resource,
+                                esp_http_client_get_status_code(client));
+        ESP_LOGI(TAG, "%s", msg.c_str());
+        Mqtt::instance().log(msg);
     }
     else
         ESP_LOGE(TAG, "Error performing http request %s", esp_err_to_name(err));

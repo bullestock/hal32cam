@@ -83,7 +83,7 @@ bool motion_detect(const camera_fb_t* fb, const struct tm& cur_tm)
             if (diff > config_pixel_threshold)
                 ++changes;
         }
-        printf("%d changes\n", changes);
+        printf("%d changes (%d %%)\n", changes, (changes*100)/BUFFER_BYTESIZE);
         if ((changes*100)/BUFFER_BYTESIZE < config_percent_threshold)
             return false;
     }
