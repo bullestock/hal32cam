@@ -28,7 +28,7 @@ void upload(const unsigned char* data, size_t size,
     char ts[20];
     strftime(ts, sizeof(ts), "%Y%m%d%H%M%S", &current);
     char resource[40];
-    sprintf(resource, "/hal9kcam/%d-%s.%s", (int) get_instance(), ts, ext);
+    sprintf(resource, "/hal9kcam/%02d-%s.%s", (int) get_instance(), ts, ext);
     
     esp_http_client_config_t config {
         .host = "minio.hal9k.dk",
