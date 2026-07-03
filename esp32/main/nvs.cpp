@@ -15,6 +15,7 @@ static wifi_creds_t wifi_creds;
 static char s3_access_key[40];
 static char s3_secret_key[40];
 static char mqtt_address[80];
+static uint8_t hmirror = false;
 
 void clear_wifi_credentials()
 {
@@ -49,6 +50,16 @@ void set_instance(int instance_arg)
     ESP_ERROR_CHECK(nvs_commit(my_handle));
     nvs_close(my_handle);
     instance = instance_arg;
+}
+
+void set_camera_hmirror(bool hmirror_arg)
+{
+    nvs_handle my_handle;
+    ESP_ERROR_CHECK(nvs_open("storage", NVS_READWRITE, &my_handle));
+    ESP_ERROR_CHECK(nvs_set_u8(my_handle, HMIRROR_KEY, hmirror_arg));
+    ESP_ERROR_CHECK(nvs_commit(my_handle));
+    nvs_close(my_handle);
+    hmirror = hmirror_arg;
 }
 
 void set_s3_access_key(const char* key)
@@ -117,6 +128,11 @@ int get_instance()
     return instance;
 }
 
+bool get_camera_hmirror()
+{
+    return hmirror;
+}
+
 wifi_creds_t get_wifi_creds()
 {
     return wifi_creds;
@@ -152,6 +168,8 @@ void init_nvs()
     char buf[256];
     if (nvs_get_i8(my_handle, INSTANCE_KEY, &instance) != ESP_OK)
         instance = 0;
+    if (nvs_get_u8(my_handle, HMIRROR_KEY, &hmirror) != ESP_OK)
+        hmirror = false;
     if (get_nvs_string(my_handle, WIFI_KEY, buf, sizeof(buf)))
         wifi_creds = parse_wifi_credentials(buf);
     if (!get_nvs_string(my_handle, S3_ACCESS_KEY, s3_access_key, sizeof(s3_access_key)))

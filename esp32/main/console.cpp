@@ -126,6 +126,31 @@ static int set_instance(int argc, char** argv)
 
 struct
 {
+    struct arg_int* hmirror;
+    struct arg_end* end;
+} set_hmirror_args;
+
+static int set_hmirror(int argc, char** argv)
+{
+    int nerrors = arg_parse(argc, argv, (void**) &set_hmirror_args);
+    if (nerrors != 0)
+    {
+        arg_print_errors(stderr, set_hmirror_args.end, argv[0]);
+        return 1;
+    }
+    const auto hmirror = set_hmirror_args.hmirror->ival[0];
+    if (hmirror < 0 || hmirror > 1)
+    {
+        printf("ERROR: Invalid hmirror value\n");
+        return 1;
+    }
+    set_camera_hmirror(hmirror);
+    printf("OK: hmirror set to %d\n", hmirror);
+    return 0;
+}
+
+struct
+{
     struct arg_str* address;
     struct arg_end* end;
 } set_mqtt_params_args;
@@ -245,6 +270,17 @@ void run_console()
         .argtable = &set_instance_args
     };
     ESP_ERROR_CHECK(esp_console_cmd_register(&set_instance_cmd));
+
+    set_hmirror_args.hmirror = arg_int1(NULL, NULL, "<hmirror>", "Hmirror number (0-255)");
+    set_hmirror_args.end = arg_end(2);
+    const esp_console_cmd_t set_hmirror_cmd = {
+        .command = "set_hmirror",
+        .help = "Set horizontal mirroring",
+        .hint = nullptr,
+        .func = &set_hmirror,
+        .argtable = &set_hmirror_args
+    };
+    ESP_ERROR_CHECK(esp_console_cmd_register(&set_hmirror_cmd));
 
     set_mqtt_params_args.address = arg_str1(NULL, NULL, "<address>", "MQTT address");
     set_mqtt_params_args.end = arg_end(2);

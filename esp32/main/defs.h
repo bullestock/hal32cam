@@ -13,6 +13,7 @@ constexpr const char* S3_ACCESS_KEY = "s3a";
 constexpr const char* S3_SECRET_KEY = "s3s";
 constexpr const char* INSTANCE_KEY = "inst";
 constexpr const char* MQTT_ADDRESS_KEY = "mqa";
+constexpr const char* HMIRROR_KEY = "hmi";
 
 constexpr const int DEFAULT_KEEPALIVE_SECS = 60;
 

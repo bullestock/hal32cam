@@ -1,6 +1,7 @@
 #include "defs.h"
 #include "motion.h"
 #include "mqtt.h"
+#include "nvs.h"
 #include "upload.h"
 
 #include <esp_log.h>
@@ -75,6 +76,8 @@ static esp_err_t init_camera()
         return err;
     }
     ESP_LOGI(TAG, "Camera init complete");
+    sensor_t* s = esp_camera_sensor_get();
+    s->set_hmirror(s, get_camera_hmirror());
     vTaskDelay(100 / portTICK_PERIOD_MS);
 
     return ESP_OK;
