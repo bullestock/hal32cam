@@ -1,3 +1,5 @@
 /esp32/build/
 sdkconfig*
 *~
+*.stl
+*.step
