@@ -83,12 +83,12 @@ void Mqtt::log(const std::string& msg)
 void Mqtt::set_status(time_t last_pic)
 {
     char timestamp[util::TIMESTAMP_SIZE];
-    util::make_timestamp(timestamp);
+    util::make_timestamp(timestamp, true);
     auto payload = cJSON_CreateObject();
     cJSON_wrapper jw(payload);
     auto jtimestamp = cJSON_CreateString(timestamp);
     cJSON_AddItemToObject(payload, "timestamp", jtimestamp);
-    util::make_timestamp(last_pic, timestamp);
+    util::make_timestamp(last_pic, timestamp, true);
     auto jlast_pic = cJSON_CreateString(timestamp);
     cJSON_AddItemToObject(payload, "last_picture", jlast_pic);
     auto version = cJSON_CreateString(esp_app_get_description()->version);
