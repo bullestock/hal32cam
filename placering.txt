@@ -1,0 +1,12 @@
+00: Metalværksted, rettet mod drejebænk
+01: Fællesrum, ved indgang, rettet mod bord
+02: Gang ved køkken, rettet mod skraldespand
+03: Metalværksted, rettet mod gården
+04: Fællesrum, over sofa
+05: Elektronikværksted, rettet mod højt bord
+06:
+07: Indgang, rettet mod limbo
+08: Elektronikværksted, rettet mod lavt bord
+09: 
+10: Lasergrotten, rettet mod Lasersaur
+11: Indgang, rettet mod dør
